@@ -1,0 +1,2185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CapyML Studio</title>
+<style>
+:root{--bg:#09090b;--card:#09090b;--card2:#18181b;--card3:#27272a;--bd:#27272a;--bdh:#3f3f46;--fg:#fafafa;--fg2:#a1a1aa;--acc:#fafafa;--acc2:#d4d4d8;--good:#10b981;--bad:#f43f5e;--warn:#f59e0b;--ring:rgba(212,212,216,.35)}
+body.light{--bg:#ffffff;--card:#ffffff;--card2:#f4f4f5;--card3:#e4e4e7;--bd:#e4e4e7;--bdh:#d4d4d7;--fg:#18181b;--fg2:#71717a;--acc:#18181b;--acc2:#3f3f46;--good:#059669;--bad:#dc2626;--warn:#b45309;--ring:rgba(24,24,27,.25)}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+h1{font-size:1.1rem;font-weight:700;margin:0;letter-spacing:-.03em}
+h2{font-size:.9rem;font-weight:600;margin:0 0 .6rem;letter-spacing:-.01em}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:.75rem;padding:1.1rem}
+.card+.card{margin-top:1rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.42rem .85rem;border-radius:.5rem;font-size:.8125rem;font-weight:500;background:var(--card2);color:var(--fg);border:1px solid var(--bd);cursor:pointer;user-select:none;line-height:1.2;transition:all .16s ease;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.btn:hover{background:var(--card3);border-color:var(--bdh);transform:translateY(-1px)}
+.btn:active{transform:translateY(0) scale(.985)}
+.btn:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ring)}
+.btn-pri{background:linear-gradient(180deg,var(--acc),var(--acc2));border-color:var(--acc2);color:var(--bg);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.2)}
+.btn-pri:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 5px 16px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.2)}
+.btn-ghost{background:transparent;border-color:transparent;box-shadow:none}
+.btn-ghost:hover{background:var(--card2);border-color:transparent}
+.btn svg{width:.95em;height:.95em;flex:none;opacity:.85}
+.btn-pri svg{opacity:1}
+.btn:disabled{opacity:.45;cursor:wait;transform:none}
+.btn-xs{padding:.24rem .55rem;font-size:.72rem;border-radius:.4rem;gap:.3rem}
+.inp,select.inp,textarea.inp{background:var(--bg);border:1px solid var(--bd);border-radius:.5rem;padding:.4rem .6rem;color:var(--fg);font-size:.8125rem;width:100%;font-family:inherit;transition:border-color .12s,box-shadow .12s}
+.inp:hover{border-color:var(--bdh)}
+.inp:focus{outline:none;border-color:var(--fg2);box-shadow:0 0 0 2px var(--ring)}
+select.inp{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--fg2) 50%),linear-gradient(135deg,var(--fg2) 50%,transparent 50%);background-position:calc(100% - 14px) 52%,calc(100% - 9px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:1.6rem}
+.lbl{display:block;font-size:.72rem;color:var(--fg2);margin-bottom:.28rem;letter-spacing:.01em;font-weight:500}
+table.t{width:100%;border-collapse:collapse;font-size:.8125rem}
+table.t th{text-align:left;padding:.45rem .55rem;color:var(--fg2);font-weight:500;border-bottom:1px solid var(--bd);white-space:nowrap}
+table.t td{padding:.4rem .55rem;border-bottom:1px solid var(--bd);white-space:nowrap}
+table.t tbody tr:hover{background:var(--card2)}
+.chip{display:inline-flex;align-items:center;gap:.35rem;background:var(--card2);border:1px solid var(--bd);border-radius:.45rem;padding:.2rem .5rem;font-size:.75rem;cursor:pointer;user-select:none}
+.chip:hover{border-color:var(--bdh)}
+.chip input{accent-color:var(--fg2)}
+.fld{display:flex;align-items:center;justify-content:space-between;gap:.4rem;padding:.22rem .4rem;border-radius:.4rem;font-size:.78rem;font-weight:500}
+.fld:hover{background:var(--card2)}
+.fld .fa{display:none;gap:3px}
+.fld:hover .fa{display:inline-flex}
+.fab{font-size:.6rem;font-weight:700;padding:.05rem .34rem;border-radius:.3rem;border:1px solid var(--bd);background:var(--card2);color:var(--fg);cursor:pointer;line-height:1.3}
+.fab:hover{border-color:var(--fg2);background:var(--card3)}
+.fld[draggable=true]{cursor:grab}
+.fld[draggable=true]:active{cursor:grabbing}
+.shelf{border:1px dashed transparent;border-radius:.55rem;padding:.28rem .38rem;transition:all .15s ease}
+.shelf:hover{border-color:var(--bd)}
+.shelf.drop-hot{border-color:var(--fg2);background:var(--card2)}
+.navbtn{padding:.4rem .8rem;border-radius:.5rem;font-size:.82rem;font-weight:500;color:var(--fg2);background:transparent;border:none;cursor:pointer;transition:color .12s,background .12s}
+.navbtn:hover{color:var(--fg)}
+.nav-on{background:var(--acc);color:var(--bg);font-weight:600}
+.subbtn{padding:.32rem .7rem;border-radius:.45rem;font-size:.78rem;font-weight:500;color:var(--fg2);background:transparent;border:none;cursor:pointer}
+.subbtn:hover{color:var(--fg)}
+.sub-on{background:var(--acc);color:var(--bg);font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:.35rem;padding:.14rem .55rem;border-radius:.4rem;font-size:.72rem;font-weight:500;border:1px solid;white-space:nowrap}
+.b-ok{background:rgba(16,185,129,.12);color:var(--good);border-color:rgba(16,185,129,.35)}
+.b-no{background:var(--card2);color:var(--fg2);border-color:var(--bd)}
+.b-bad{background:rgba(244,63,94,.12);color:var(--bad);border-color:rgba(244,63,94,.35)}
+.stat{background:var(--card2);border:1px solid var(--bd);border-radius:.6rem;padding:.55rem .7rem}
+.stat b{display:block;font-size:1.3rem;font-weight:600;letter-spacing:-.02em;color:var(--fg);line-height:1.3}
+.stat span{font-size:.7rem;color:var(--fg2);font-weight:500}
+.model-card{display:flex;flex-direction:column;gap:.25rem;padding:.65rem .75rem;border:1px solid var(--bd);border-radius:.6rem;cursor:pointer;background:var(--card2);position:relative;transition:border-color .12s}
+.model-card:hover{border-color:var(--bdh)}
+.model-card.sel{border-color:var(--fg);background:var(--card3)}
+.model-card b{font-size:.8rem;font-weight:600;letter-spacing:-.01em}
+.model-card input{position:absolute;opacity:0;width:0;height:0}
+details.g{background:var(--card)}
+details.g>summary{cursor:pointer;font-weight:600;font-size:.875rem;letter-spacing:-.01em;list-style:none;display:flex;align-items:center;gap:.4rem;color:var(--fg)}
+details.g>summary::-webkit-details-marker{display:none}
+details.g>summary:before{content:"+";color:var(--fg2);font-weight:600;width:1em;display:inline-block;font-size:.95rem}
+details.g[open]>summary:before{content:"\2013"}
+details.g[open]{border-color:var(--bdh)}
+.drop-hot{border-color:var(--fg2)!important;background:var(--card2)!important}
+.mono{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace}
+pre.rules{background:var(--card2);border:1px solid var(--bd);border-radius:.6rem;padding:.7rem;font-size:.72rem;overflow:auto;max-height:260px;color:var(--fg)}
+.plot{width:100%}
+input[type=range]{accent-color:var(--fg2)}
+input[type=checkbox]{accent-color:var(--fg2)}
+.wf-node{position:absolute;width:210px;background:var(--card);border:1px solid var(--bd);border-radius:.6rem;box-shadow:0 4px 14px rgba(0,0,0,.45);z-index:3}
+.wf-node.sel{border-color:var(--fg)}
+.wf-hd{display:flex;justify-content:space-between;align-items:center;padding:.32rem .5rem;font-size:.74rem;font-weight:600;letter-spacing:-.01em;cursor:grab;border-bottom:1px solid var(--bd);border-radius:.6rem .6rem 0 0;background:var(--card2)}
+.wf-hd:active{cursor:grabbing}
+.wf-body{padding:.4rem .5rem;font-size:.68rem;color:var(--fg2);min-height:26px;line-height:1.25;max-width:200px;overflow:hidden}
+.wf-x{color:var(--fg2);font-size:.8rem;line-height:1;padding:0 .3rem;border-radius:4px;background:none;border:none;cursor:pointer}
+.wf-x:hover{background:var(--bad);color:#fff}
+.wf-port{position:absolute;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg);cursor:pointer;z-index:4}
+.wf-port:hover{transform:scale(1.35)}
+.wf-out{right:-8px;background:#38bdf8}
+.wf-in{left:-8px;background:#71717a}
+.wf-in.wf-armed{background:var(--bad);box-shadow:0 0 0 4px rgba(244,63,94,.3)}
+.wf-badge{position:absolute;right:6px;bottom:-9px;font-size:.6rem;font-weight:600;background:var(--good);color:#06281c;padding:.05rem .4rem;border-radius:999px;z-index:4}
+.wf-badge.err{background:var(--bad);color:#fff}
+.wf-dot{width:8px;height:8px;border-radius:50%;background:var(--bd);flex:none}
+.wf-dot.ok{background:var(--good)}.wf-dot.error{background:var(--bad)}
+.wf-edge{fill:none;stroke:#52525b;stroke-width:2px}
+.wf-edge.m{stroke:#a78bfa}.wf-edge.tr{stroke:#34d399}.wf-edge.te{stroke:#fbbf24}.wf-edge.sc{stroke:#fb7185}
+.wf-edge-hit{fill:none;stroke:transparent;stroke-width:15px;pointer-events:stroke;cursor:pointer}
+.pal-item{padding:.45rem .6rem;border:1px solid var(--bd);border-radius:.55rem;font-size:.78rem;font-weight:500;cursor:grab;background:var(--card2);user-select:none}
+.pal-item:hover{border-color:var(--fg2);background:var(--card3)}
+.pbar{height:8px;border-radius:999px;background:var(--card2);border:1px solid var(--bd);overflow:hidden}
+.pbar>div{height:100%;background:var(--fg);width:0%;transition:width .25s}
+.ctxmenu{position:fixed;z-index:90;min-width:210px;background:var(--card);border:1px solid var(--bd);border-radius:.6rem;padding:.3rem;box-shadow:0 10px 32px rgba(0,0,0,.55)}
+.ctx-h{font-size:.7rem;font-weight:600;color:var(--fg2);padding:.3rem .55rem;border-bottom:1px solid var(--bd);margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
+.ctx-i{font-size:.8rem;font-weight:500;padding:.38rem .55rem;border-radius:.4rem;cursor:pointer;display:flex;align-items:center;gap:.45rem}
+.ctx-i:hover{background:var(--card2)}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--card3);border-radius:9px}::-webkit-scrollbar-track{background:transparent}
+</style>
+<script>
+const PYODIDE_URL='https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
+const PLOTLY_URL='https://cdn.jsdelivr.net/npm/plotly.js@2.35.2/dist/plotly.min.js';
+const TW_URL='https://cdn.tailwindcss.com';
+const TRANSFORMERS_URL='https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js';
+const TRANSFORMERS_ENTRY='https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+const XLSX_URL='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+const EXCELJS_URL='https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+const CACHE_PREFIXES=[PYODIDE_URL,PLOTLY_URL,TRANSFORMERS_URL,XLSX_URL,EXCELJS_URL,'https://huggingface.co/','https://cdn-lfs.huggingface.co/'];
+const DB='CapyML_WasmCache',STORE='assets';
+const S={cols:[],byName:{},ready:false,dlMB:0,hits:0,sheets:{}};
+const PALETTES={
+ colorblind:{label:'Color-blind safe (default)',colors:['#0072B2','#E69F00','#009E73','#D55E00','#CC79A7','#56B4E9','#8C8C8C','#F0E442','#5661BA','#A69F00']},
+ tableau10:{label:'Tableau 10',colors:['#4E79A7','#F28E2B','#E15759','#76B7B4','#59A14F','#EDC948','#B07AA1','#FF9DA7','#9C755F','#BAB0AC']},
+ classic:{label:'Tableau Classic',colors:['#1F77B4','#FF7F0E','#2CA02C','#D62728','#9467BD','#8C564B','#E377C2','#7F7F7F','#BCBD22','#17BECF']},
+ grayscale:{label:'Grayscale (print)',colors:['#3f3f46','#71717a','#a1a1aa','#d4d4d8','#52525b','#8a8a92','#b8b8bf','#e4e4e7','#64646c','#c4c4cb']}
+};
+let PAL=PALETTES.colorblind.colors;
+function applyPalette(name,silent){
+  const p=PALETTES[name];
+  if(!p)return;
+  PAL=p.colors;
+  try{localStorage.setItem('capyml-pal',name)}catch(e){}
+  if(typeof rerenderChart==='function')rerenderChart();
+  if(!silent)toast('Chart palette: '+p.label,'ok');
+}
+const SENT_MODELS={
+ 'Xenova/distilbert-base-uncased-finetuned-sst-2-english':'DistilBERT SST-2 English (fast, ~27 MB) \u00b7 positive / negative',
+ 'Xenova/twitter-roberta-base-sentiment-latest':'Twitter RoBERTa (trained on tweets, ~50 MB) \u00b7 negative / neutral / positive'
+};
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{r.result.createObjectStore(STORE)};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});}
+async function idbGet(k){try{const db=await idb();return await new Promise((res,rej)=>{const q=db.transaction(STORE).objectStore(STORE).get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}catch(e){return null}}
+async function idbPut(k,v){try{const db=await idb();await new Promise((res,rej)=>{const q=db.transaction(STORE,'readwrite').objectStore(STORE).put(v,k);q.onsuccess=res;q.onerror=()=>rej(q.error)})}catch(e){}}
+async function idbCount(){try{const db=await idb();return await new Promise((res,rej)=>{const q=db.transaction(STORE).objectStore(STORE).count();q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}catch(e){return 0}}
+async function idbClear(){try{const db=await idb();await new Promise((res,rej)=>{const q=db.transaction(STORE,'readwrite').objectStore(STORE).clear();q.onsuccess=res;q.onerror=()=>rej(q.error)})}catch(e){}}
+const realFetch=window.fetch.bind(window);
+window.fetch=async function(input,init){
+  const url=typeof input==='string'?input:(input&&input.url)||'';
+  const isGet=!init||!init.method||String(init.method).toUpperCase()==='GET';
+  let hasRange=false;
+  if(init&&init.headers){try{const h=init.headers;hasRange=(h instanceof Headers)?!!h.get('range'):JSON.stringify(h).toLowerCase().includes('range')}catch(e){}}
+  if(isGet&&!hasRange&&CACHE_PREFIXES.some(p=>url.startsWith(p))){
+    try{
+      const hit=await idbGet(url);
+      if(hit){S.hits++;return new Response(hit.body,{status:200,headers:hit.h})}
+      const resp=await realFetch(input,init);
+      if(resp.ok&&resp.type!=='opaque'){
+        const ct=resp.headers.get('content-type')||'application/octet-stream';
+        const buf=await resp.arrayBuffer();S.dlMB+=buf.byteLength/1048576;ovMB();
+        idbPut(url,{h:{'content-type':ct},body:buf});
+        return new Response(buf,{status:200,headers:{'content-type':ct}});
+      }
+      return resp;
+    }catch(e){return realFetch(input,init)}
+  }
+  return realFetch(input,init);
+};
+async function cachedScript(url,check){
+  try{
+    const hit=await idbGet(url);
+    let buf=hit?hit.body:null;
+    if(!buf){const r=await realFetch(url);if(!r.ok)throw 0;buf=await r.arrayBuffer();S.dlMB+=buf.byteLength/1048576;ovMB();
+      idbPut(url,{h:{'content-type':'text/javascript'},body:buf});}
+    (0,eval)(new TextDecoder().decode(new Uint8Array(buf)));
+    if(!check())throw 0;
+    return true;
+  }catch(e){return false}
+}
+function fallbackScript(url){return new Promise(res=>{const s=document.createElement('script');s.src=url;s.onload=res;s.onerror=res;document.head.appendChild(s)})}
+async function importCached(url,entry){
+  try{
+    const hit=await idbGet(url);let buf=hit?hit.body:null;
+    if(!buf){const r=await realFetch(url);if(!r.ok)throw 0;buf=await r.arrayBuffer();S.dlMB+=buf.byteLength/1048576;ovMB();
+      idbPut(url,{h:{'content-type':'text/javascript'},body:buf});}
+    const mod=await import(URL.createObjectURL(new Blob([buf],{type:'text/javascript'})));
+    if(!mod.loadPyodide)throw 0;
+    return mod.loadPyodide;
+  }catch(e){return (await import(entry||url)).loadPyodide}
+}
+function ovMB(){const e=document.getElementById('ov-mb');if(e)e.textContent=S.dlMB>0?('Downloading... '+S.dlMB.toFixed(1)+' MB (first time only - cached afterwards)'):''}
+</script>
+</head>
+<body>
+<header style="border-bottom:1px solid var(--bd)">
+  <div class="max-w-[1500px] mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
+    <h1>CapyML <span style="color:var(--fg2)">Studio</span></h1>
+    <span class="text-xs" style="color:var(--fg2)">local-first ML, statistics &amp; NLP lab &middot; data never leaves this machine</span>
+    <span id="hdr-status" class="badge b-no" style="margin-left:auto">Python: loading...</span>
+    <select id="pal-sel" class="inp" style="width:auto;font-size:.72rem;padding:.28rem 1.5rem .28rem .55rem" title="Chart color scheme (applies to all charts)"></select>
+    <button id="xlsx-btn" class="btn btn-xs" title="Export dataset + all results + chart PNGs to a multi-sheet Excel workbook">Export Excel</button>
+    <button id="csv-btn" class="btn btn-xs" title="Download the dataset as CSV (results &amp; charts are in the Excel export)">Export CSV</button>
+    <button id="purge-btn" class="btn btn-xs" title="Delete all cached Pyodide/Plotly/model binaries">Purge cache</button>
+    <button id="theme-btn" class="btn btn-xs">Light</button>
+  </div>
+  <nav class="max-w-[1500px] mx-auto px-4 pb-2 flex gap-1 flex-wrap" style="background:var(--card2);border-radius:.6rem;margin:0 1rem 1rem;padding:.25rem;width:calc(100% - 2rem)">
+    <button class="navbtn nav-on" data-ws="data">Data &amp; Survey</button>
+    <button class="navbtn" data-ws="viz">Analytics &amp; Visuals</button>
+    <button class="navbtn" data-ws="lab">Modeling &amp; Hypothesis Lab</button>
+    <button class="navbtn" data-ws="flow">CapyFlow Canvas</button>
+  </nav>
+</header>
+<main class="max-w-[1500px] mx-auto p-4 space-y-4">
+
+<section id="ws-data" class="space-y-4">
+  <div class="grid lg:grid-cols-2 gap-4">
+    <div class="card">
+      <h2>1 &middot; Load data</h2>
+      <div id="drop" class="rounded-xl p-5 text-center mb-3" style="border:1px dashed var(--bdh)">
+        <p class="text-sm font-semibold mb-1" style="letter-spacing:-.01em">Drag &amp; drop a CSV / TSV / Excel (.xlsx) file here</p>
+        <p class="text-xs mb-3" style="color:var(--fg2)">First row = column names (first sheet for Excel). Parsing and all analysis happen in your browser.</p>
+        <input id="file-in" type="file" accept=".csv,.tsv,.txt,.json,.xlsx,.xls" class="text-xs">
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button class="btn" data-sample="housing">Sample: Housing Prices (regression)</button>
+        <button class="btn" data-sample="churn">Sample: Customer Churn (classification)</button>
+        <button class="btn" data-sample="abtest">Sample: A/B Campaign (testing)</button>
+        <button class="btn" data-sample="reviews">Sample: Customer Reviews (NLP)</button>
+      </div>
+      <p class="text-xs mt-2" style="color:var(--fg2)">Samples are synthetic demos generated locally with a fixed seed.</p>
+      <details class="g mt-3"><summary class="text-sm">...or paste CSV / JSON</summary>
+        <textarea id="paste-ta" rows="5" class="inp mt-2 mono" style="font-size:.72rem"></textarea>
+        <button id="btn-paste" class="btn btn-pri mt-2">Load pasted data</button>
+      </details>
+    </div>
+    <div class="card">
+      <h2>2 &middot; Dataset summary</h2>
+      <div id="data-meta" class="text-sm mb-2" style="color:var(--fg2)">No dataset loaded yet &mdash; the reactive store <span class="mono">df_master</span> lives in this page&rsquo;s Python runtime.</div>
+      <div class="overflow-auto" style="max-height:260px"><div id="col-table"></div></div>
+      <p class="text-xs mt-2" style="color:var(--fg2)">Right-click a column to coerce its type (number &harr; text &harr; integer).</p>
+    </div>
+  </div>
+  <div class="card">
+    <h2>3 &middot; Preview</h2>
+    <div id="preview" class="overflow-auto" style="max-height:300px"><p class="text-sm" style="color:var(--fg2)">Nothing yet.</p></div>
+  </div>
+  <div class="card" id="survey">
+    <h2>Interactive Survey &middot; guided method recommender</h2>
+    <p class="text-xs mb-3" style="color:var(--fg2)">Tell CapyML what you&rsquo;re trying to figure out &mdash; it routes you to the right tool and pre-configures it.</p>
+    <div id="sv-q1" class="grid md:grid-cols-2 gap-2"></div>
+    <div id="sv-rec" class="mt-4 grid lg:grid-cols-2 gap-3"></div>
+  </div>
+</section>
+
+<section id="ws-viz" class="hidden space-y-4">
+  <div class="card">
+    <div class="flex items-center justify-between gap-2 mb-2"><h2 style="margin:0">Visual builder &middot; pick your fields</h2><button class="btn btn-xs btn-ghost" data-sample="housing">Load sample</button></div>
+    <div class="grid md:grid-cols-[250px,1fr] gap-4">
+      <div class="md:border-r md:pr-3" style="border-color:var(--bd)">
+        <div class="flex items-center gap-2 mb-1"><h2 style="margin:0">Fields</h2><span class="text-xs" style="color:var(--fg2)"><span style="color:#5b9bd5">&#9632;</span> dimension &nbsp; <span style="color:#4da860">&#9632;</span> measure</span></div>
+        <p class="text-xs mb-2" style="color:var(--fg2)">Drag a field onto the X / Y / Color shelves &mdash; or hover it for quick buttons.</p>
+        <div class="lbl" style="color:#5b9bd5">Dimensions (A&ndash;Z)</div>
+        <div id="fld-dims" class="overflow-y-auto" style="max-height:170px"></div>
+        <div class="lbl" style="color:#4da860">Measures (A&ndash;Z)</div>
+        <div id="fld-meas" class="overflow-y-auto" style="max-height:280px"></div>
+      </div>
+      <div>
+        <div class="grid md:grid-cols-3 gap-3">
+          <div class="shelf" data-shelf="g-x"><label class="lbl">Columns (X)</label><select id="g-x" class="inp"></select></div>
+          <div class="shelf" data-shelf="g-y"><label class="lbl">Rows (Y) &mdash; optional</label><select id="g-y" class="inp"></select></div>
+          <div class="shelf" data-shelf="g-g"><label class="lbl">Color / Group by &mdash; optional</label><select id="g-g" class="inp"></select></div>
+        </div>
+        <div class="flex items-center gap-3 mt-2 flex-wrap">
+          <button id="g-swap" class="btn btn-xs" title="Swap the X and Y shelves">&#8646; Swap X/Y</button>
+          <label class="flex items-center gap-1 text-xs" id="g-bins-wrap">bins <input id="g-bins" type="number" min="2" max="100" value="20" class="inp" style="width:60px"></label>
+          <label class="flex items-center gap-1 text-xs" id="g-agg-lbl">Aggregation <select id="g-agg" class="inp" style="width:90px"><option>mean</option><option>sum</option><option>median</option><option>count</option></select></label>
+          <label class="flex items-center gap-1 text-xs"><input id="g-trend" type="checkbox" style="accent-color:var(--acc)"> OLS trendline</label>
+        </div>
+        <div id="g-kinds" class="flex flex-wrap gap-2 mt-3"></div>
+        <p id="g-note" class="text-xs mt-2" style="color:var(--fg2)"></p>
+      </div>
+    </div>
+  </div>
+  <div class="card"><div id="g-plot" class="plot" style="height:430px"></div></div>
+  <div class="card">
+    <div class="flex items-center gap-3 flex-wrap">
+      <h2 style="margin:0">Correlation matrix</h2>
+      <span class="flex items-center gap-1 text-xs font-semibold">Method <select id="corr-method" class="inp" style="width:120px"><option>pearson</option><option>spearman</option></select></span>
+      <label class="flex items-center gap-1 text-xs font-semibold"><input id="corr-sig" type="checkbox" style="accent-color:var(--acc)"> significance masking (p &lt; 0.05)</label>
+      <span class="flex gap-1"><button class="btn btn-xs btn-ghost" data-fa="corr-cols">All</button><button class="btn btn-xs btn-ghost" data-fn="corr-cols">None</button></span>
+      <button id="btn-corr" class="btn btn-pri">Compute matrix</button>
+    </div>
+    <p class="text-xs mt-1 mb-1" style="color:var(--fg2)">Pearson = linear association &middot; Spearman = monotonic (rank). Significance masking grays out pairs with p &ge; 0.05.</p>
+    <div id="corr-cols" class="flex flex-wrap gap-2 mt-2"></div>
+  </div>
+  <div class="card">
+    <div class="grid lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2"><div id="corr-plot" class="plot" style="height:460px"></div><p id="corr-note" class="text-xs mt-1" style="color:var(--fg2)"></p></div>
+      <div><h2 class="mb-2">Strongest pairs</h2><div id="corr-pairs" class="text-sm space-y-1" style="color:var(--fg2)"></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="ws-lab" class="hidden space-y-4">
+  <div class="flex gap-1 flex-wrap">
+    <button class="subbtn sub-on" data-lab="lin">Linear Models</button>
+    <button class="subbtn" data-lab="clf">Classification</button>
+    <button class="subbtn" data-lab="nl">Non-linear Regression</button>
+    <button class="subbtn" data-lab="tests">Hypothesis Tests</button>
+    <button class="subbtn" data-lab="sent">Sentiment (NLP)</button>
+  </div>
+
+  <div id="lab-lin" class="grid lg:grid-cols-3 gap-4">
+    <div class="card">
+      <div class="flex items-center justify-between gap-2"><h2 style="margin:0">Linear models (numeric target)</h2><button class="btn btn-xs btn-ghost" data-sample="housing">Load sample: Housing</button></div>
+      <p class="text-xs mb-3" style="color:var(--fg2)">Categorical features are one-hot encoded automatically. Penalized models standardize features so coefficients are comparable.</p>
+      <label class="lbl">Target (numeric)</label><select id="lin-target" class="inp mb-2"></select>
+      <div class="flex items-center justify-between"><label class="lbl" style="margin:0">Features</label><span class="flex gap-1"><button class="btn btn-xs btn-ghost" data-fa="lin-feats">All</button><button class="btn btn-xs btn-ghost" data-fn="lin-feats">None</button></span></div><div id="lin-feats" class="flex flex-wrap gap-1 mb-3 overflow-y-auto" style="max-height:130px"></div>
+      <div class="grid grid-cols-2 gap-2" id="lin-models">
+        <label class="model-card"><input type="radio" name="lin-model" value="ols" checked><b>OLS Linear Regression</b><span class="text-[11px]" style="color:var(--fg2)">Plain least squares. Interpretable baseline; sensitive to multicollinearity; assumes linearity + constant variance.</span></label>
+        <label class="model-card"><input type="radio" name="lin-model" value="ridge"><b>Ridge (L2)</b><span class="text-[11px]" style="color:var(--fg2)">Shrinks coefficients smoothly; best when features correlate. Key knob: alpha.</span></label>
+        <label class="model-card"><input type="radio" name="lin-model" value="lasso"><b>LASSO (L1)</b><span class="text-[11px]" style="color:var(--fg2)">Drives weak coefficients to exactly zero &mdash; automatic feature selection. Key knob: alpha.</span></label>
+        <label class="model-card"><input type="radio" name="lin-model" value="enet"><b>ElasticNet (L1+L2)</b><span class="text-[11px]" style="color:var(--fg2)">Ridge stability + LASSO sparsity. Key knobs: alpha, l1_ratio.</span></label>
+      </div>
+      <div id="lin-info" class="mt-3"></div>
+      <div data-when="ridge lasso enet" class="mt-3"><label class="lbl">alpha (penalty strength): <b id="lin-alpha-v">1</b></label><input id="lin-alpha" type="range" min="0.01" max="10" step="0.01" value="1" class="w-full" style="accent-color:var(--acc)"></div>
+      <div data-when="enet" class="mt-3"><label class="lbl">l1_ratio (0=Ridge, 1=LASSO): <b id="lin-l1-v">0.5</b></label><input id="lin-l1" type="range" min="0" max="1" step="0.05" value="0.5" class="w-full" style="accent-color:var(--acc)"></div>
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <div><label class="lbl">Test size: <b id="lin-ts-v">20%</b></label><input id="lin-ts" type="range" min="0.1" max="0.5" step="0.05" value="0.2" class="w-full" style="accent-color:var(--acc)"></div>
+        <div><label class="lbl">Random seed</label><input id="lin-seed" type="number" value="42" class="inp"></div>
+      </div>
+      <label class="flex items-center gap-1 text-xs font-semibold mt-3"><input id="lin-scale" type="checkbox" checked style="accent-color:var(--acc)"> Standardize features (recommended for penalized models)</label>
+      <button id="btn-lin" class="btn btn-pri w-full mt-4">Fit &amp; evaluate</button>
+    </div>
+    <div class="card lg:col-span-2 space-y-3">
+      <div id="lin-out"></div>
+      <div><h2>Coefficients (impact &amp; direction)</h2><div id="lin-coef" class="plot" style="height:300px"></div></div>
+      <div class="grid md:grid-cols-2 gap-3">
+        <div class="card" style="background:var(--card2)"><h2 class="text-xs">Actual vs Predicted (test)</h2><div id="lin-avp" class="plot" style="height:260px"></div></div>
+        <div class="card" style="background:var(--card2)"><h2 class="text-xs">Residuals (test)</h2><div id="lin-res" class="plot" style="height:260px"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="lab-clf" class="hidden grid lg:grid-cols-3 gap-4">
+    <div class="card">
+      <div class="flex items-center justify-between gap-2"><h2 style="margin:0">Classification (categorical target)</h2><button class="btn btn-xs btn-ghost" data-sample="churn">Load sample: Churn</button></div>
+      <p class="text-xs mb-3" style="color:var(--fg2)">Categorical features are one-hot encoded automatically.</p>
+      <label class="lbl">Target (categorical)</label><select id="cl-target" class="inp mb-2"></select>
+      <div class="flex items-center justify-between"><label class="lbl" style="margin:0">Features</label><span class="flex gap-1"><button class="btn btn-xs btn-ghost" data-fa="cl-feats">All</button><button class="btn btn-xs btn-ghost" data-fn="cl-feats">None</button></span></div><div id="cl-feats" class="flex flex-wrap gap-1 mb-3 overflow-y-auto" style="max-height:130px"></div>
+      <div class="grid grid-cols-3 gap-2">
+        <label class="model-card"><input type="radio" name="cl-model" value="logreg" checked><b>Logistic Regression</b><span class="text-[11px]" style="color:var(--fg2)">Probabilistic linear boundary; interpretable odds. Key knob: C (inverse regularization).</span></label>
+        <label class="model-card"><input type="radio" name="cl-model" value="dt"><b>Decision Tree</b><span class="text-[11px]" style="color:var(--fg2)">Rule-based splits; fully interpretable; non-linear boundaries. Key knob: max_depth.</span></label>
+        <label class="model-card"><input type="radio" name="cl-model" value="gbt"><b>Gradient Boosted Trees</b><span class="text-[11px]" style="color:var(--fg2)">Sequential ensemble; each tree fixes the last one&rsquo;s residuals. Key knobs: n_estimators, learning_rate.</span></label>
+      </div>
+      <div id="cl-info" class="mt-3"></div>
+      <div data-when="logreg" class="mt-3"><label class="lbl">C (inverse regularization)</label><input id="cl-C" type="number" min="0.001" step="any" value="1" class="inp"></div>
+      <div data-when="dt" class="mt-3"><label class="lbl">max_depth: <b id="cl-depth-v">3</b></label><input id="cl-depth" type="range" min="1" max="10" step="1" value="3" class="w-full" style="accent-color:var(--acc)">
+        <label class="flex items-center gap-1 text-xs mt-1"><input id="cl-unlim" type="checkbox" style="accent-color:var(--acc)"> No depth limit (risk: overfitting)</label></div>
+      <div data-when="gbt" class="mt-3 grid grid-cols-2 gap-3">
+        <div><label class="lbl">n_estimators: <b id="cl-nest-v">100</b></label><input id="cl-nest" type="range" min="20" max="300" step="10" value="100" class="w-full" style="accent-color:var(--acc)"></div>
+        <div><label class="lbl">learning_rate: <b id="cl-lr-v">0.1</b></label><input id="cl-lr" type="range" min="0.01" max="0.5" step="0.01" value="0.1" class="w-full" style="accent-color:var(--acc)"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <div><label class="lbl">Test size: <b id="cl-ts-v">20%</b></label><input id="cl-ts" type="range" min="0.1" max="0.5" step="0.05" value="0.2" class="w-full" style="accent-color:var(--acc)"></div>
+        <div><label class="lbl">Random seed</label><input id="cl-seed" type="number" value="42" class="inp"></div>
+      </div>
+      <label class="flex items-center gap-1 text-xs font-semibold mt-3"><input id="cl-scale" type="checkbox" checked style="accent-color:var(--acc)"> Standardize features (Logistic only)</label>
+      <button id="btn-cl" class="btn btn-pri w-full mt-4">Fit &amp; evaluate</button>
+    </div>
+    <div class="card lg:col-span-2 space-y-3">
+      <div id="cl-out"></div>
+      <div class="grid md:grid-cols-2 gap-3">
+        <div class="card" style="background:var(--card2)"><h2 class="text-xs">Confusion matrix (test)</h2><div id="cl-cm" class="plot" style="height:300px"></div></div>
+        <div class="card" style="background:var(--card2)"><h2 class="text-xs">Feature importance / coefficients</h2><div id="cl-imp" class="plot" style="height:300px"></div></div>
+      </div>
+      <div id="cl-rules-wrap" class="hidden"><h2 class="text-xs">Decision tree rules</h2><pre id="cl-rules" class="rules"></pre></div>
+    </div>
+  </div>
+
+  <div id="lab-nl" class="hidden grid lg:grid-cols-3 gap-4">
+    <div class="card">
+      <div class="flex items-center justify-between gap-2"><h2 style="margin:0">Non-linear regression (numeric target)</h2><button class="btn btn-xs btn-ghost" data-sample="housing">Load sample: Housing</button></div>
+      <p class="text-xs mb-3" style="color:var(--fg2)">Polynomial captures smooth curvature (beware overfitting at degree &ge; 4); trees handle steps &amp; interactions; boosting is the strongest tabular option.</p>
+      <label class="lbl">Target (numeric)</label><select id="nl-target" class="inp mb-2"></select>
+      <div class="flex items-center justify-between"><label class="lbl" style="margin:0">Features</label><span class="flex gap-1"><button class="btn btn-xs btn-ghost" data-fa="nl-feats">All</button><button class="btn btn-xs btn-ghost" data-fn="nl-feats">None</button></span></div><div id="nl-feats" class="flex flex-wrap gap-1 mb-3 overflow-y-auto" style="max-height:130px"></div>
+      <div class="grid grid-cols-3 gap-2">
+        <label class="model-card"><input type="radio" name="nl-model" value="poly" checked><b>Polynomial</b><span class="text-[11px]" style="color:var(--fg2)">Adds x&sup2;, x&sup3;... terms. Key knob: degree (2&ndash;5). Overfit risk grows fast with degree.</span></label>
+        <label class="model-card"><input type="radio" name="nl-model" value="dt"><b>Decision Tree</b><span class="text-[11px]" style="color:var(--fg2)">Piecewise-constant splits. Key knob: max_depth.</span></label>
+        <label class="model-card"><input type="radio" name="nl-model" value="gbt"><b>Gradient Boosting</b><span class="text-[11px]" style="color:var(--fg2)">Ensemble of small corrective trees. Key knobs: n_estimators, learning_rate.</span></label>
+      </div>
+      <div id="nl-info" class="mt-3"></div>
+      <div data-when="poly" class="mt-3"><label class="lbl">degree: <b id="nl-degree-v">2</b></label><input id="nl-degree" type="range" min="2" max="5" step="1" value="2" class="w-full" style="accent-color:var(--acc)"></div>
+      <div data-when="dt" class="mt-3"><label class="lbl">max_depth: <b id="nl-depth-v">3</b></label><input id="nl-depth" type="range" min="1" max="10" step="1" value="3" class="w-full" style="accent-color:var(--acc)">
+        <label class="flex items-center gap-1 text-xs mt-1"><input id="nl-unlim" type="checkbox" style="accent-color:var(--acc)"> No depth limit</label></div>
+      <div data-when="gbt" class="mt-3 grid grid-cols-2 gap-3">
+        <div><label class="lbl">n_estimators: <b id="nl-nest-v">100</b></label><input id="nl-nest" type="range" min="20" max="300" step="10" value="100" class="w-full" style="accent-color:var(--acc)"></div>
+        <div><label class="lbl">learning_rate: <b id="nl-lr-v">0.1</b></label><input id="nl-lr" type="range" min="0.01" max="0.5" step="0.01" value="0.1" class="w-full" style="accent-color:var(--acc)"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <div><label class="lbl">Test size: <b id="nl-ts-v">20%</b></label><input id="nl-ts" type="range" min="0.1" max="0.5" step="0.05" value="0.2" class="w-full" style="accent-color:var(--acc)"></div>
+        <div><label class="lbl">Random seed</label><input id="nl-seed" type="number" value="42" class="inp"></div>
+      </div>
+      <button id="btn-nl" class="btn btn-pri w-full mt-4">Fit &amp; evaluate</button>
+    </div>
+    <div class="card lg:col-span-2 space-y-3">
+      <div id="nl-out"></div>
+      <div id="nl-curve-wrap" class="hidden"><h2>Fitted curve &amp; data</h2><div id="nl-curve" class="plot" style="height:320px"></div></div>
+      <div class="card" style="background:var(--card2)"><h2 class="text-xs">Residuals (test)</h2><div id="nl-res" class="plot" style="height:260px"></div></div>
+    </div>
+  </div>
+
+  <div id="lab-tests" class="hidden">
+    <div class="flex items-center gap-2 mb-3 flex-wrap"><button class="btn btn-xs btn-ghost" data-sample="abtest">Load sample: A/B Campaign</button><span class="text-xs" style="color:var(--fg2)">Good for t-tests, chi-square, Mann-Whitney, ANOVA, Kruskal-Wallis.</span></div>
+    <div class="grid lg:grid-cols-2 gap-4">
+      <details class="card g" id="t-ttest1">
+        <summary>One-Sample T-Test</summary>
+        <div class="text-xs mt-2 space-y-1" style="color:var(--fg2)">
+          <p><b style="color:var(--fg)">Use when:</b> testing if one numeric column&rsquo;s mean differs from a known value (e.g. &ldquo;is average delivery time really 30 min?&rdquo;).</p>
+          <p><b style="color:var(--fg)">H&#8320;:</b> &mu; = &mu;&#8320;. <b style="color:var(--fg)">Assumptions:</b> ~normal data (or n &ge; 30). <b style="color:var(--fg)">Read:</b> p &lt; 0.05 &rarr; the mean differs significantly; check the CI for practical meaning.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div><label class="lbl">Numeric column</label><select id="t1-col" class="inp"></select></div>
+          <div><label class="lbl">Hypothesized mean &mu;&#8320;</label><input id="t1-mu" type="number" step="any" value="0" class="inp"></div>
+        </div>
+        <button class="btn btn-pri mt-3 t-run" data-test="ttest1">Run test</button>
+        <div class="t-out mt-3"></div>
+      </details>
+      <details class="card g" id="t-ttest2">
+        <summary>Two-Sample T-Test (Independent)</summary>
+        <div class="text-xs mt-2 space-y-1" style="color:var(--fg2)">
+          <p><b style="color:var(--fg)">Use when:</b> comparing the average of a metric across two separate groups (A vs B, control vs treatment).</p>
+          <p><b style="color:var(--fg)">H&#8320;:</b> means are equal. <b style="color:var(--fg)">Welch</b> (default) doesn&rsquo;t assume equal variances &mdash; usually safer. <b style="color:var(--fg)">Non-normal?</b> Use Mann-Whitney U instead.</p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
+          <div><label class="lbl">Numeric column</label><select id="t2-col" class="inp"></select></div>
+          <div><label class="lbl">Group column</label><select id="t2-grp" class="inp"></select></div>
+          <div><label class="lbl">Group A</label><select id="t2-ga" class="inp"></select></div>
+          <div><label class="lbl">Group B</label><select id="t2-gb" class="inp"></select></div>
+        </div>
+        <label class="flex items-center gap-1 text-xs mt-2"><input id="t2-eq" type="checkbox" style="accent-color:var(--acc)"> Assume equal variances (Student&rsquo;s t instead of Welch)</label>
+        <button class="btn btn-pri mt-3 t-run" data-test="ttest2">Run test</button>
+        <div class="t-out mt-3"></div>
+      </details>
+      <details class="card g" id="t-ttestp">
+        <summary>Paired T-Test</summary>
+        <div class="text-xs mt-2 space-y-1" style="color:var(--fg2)">
+          <p><b style="color:var(--fg)">Use when:</b> two measurements on the same rows (before/after, machine A vs B on the same units).</p>
+          <p><b style="color:var(--fg)">H&#8320;:</b> mean of the paired differences = 0. Rows missing either value are dropped pairwise.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div><label class="lbl">Column A (before)</label><select id="tp-a" class="inp"></select></div>
+          <div><label class="lbl">Column B (after)</label><select id="tp-b" class="inp"></select></div>
+        </div>
+        <button class="btn btn-pri mt-3 t-run" data-test="ttestp">Run test</button>
+        <div class="t-out mt-3"></div>
+      </details>
+      <details class="card g" id="t-anova">
+        <summary>One-Way ANOVA</summary>
+        <div class="text-xs mt-2 space-y-1" style="color:var(--fg2)">
+          <p><b style="color:var(--fg)">Use when:</b> comparing a numeric column&rsquo;s means across 3+ groups (e.g. spend by device).</p>
+          <p><b style="color:var(--fg)">H&#8320;:</b> all group means equal. Overall test &mdash; if significant, follow up pairwise with t-tests. <b style="color:var(--fg)">Non-normal?</b> Kruskal-Wallis.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div><label class="lbl">Numeric column</label><select id="av-col" class="inp"></select></div>
+          <div><label class="lbl">Group column (3+)</label><select id="av-grp" class="inp"></select></div>
+        </div>
+        <button class="btn btn-pri mt-3 t-run" data-test="anova">Run test</button>
+        <div class="t-out mt-3"></div>
+      </details>
+      <details class="card g" id="t-chi2">
+        <summary>Chi-Square Test of Independence</summary>
+        <div class="text-xs mt-2 space-y-1" style="color:var(--fg2)">
+          <p><b style="color:var(--fg)">Use when:</b> proving whether counts of one category differ across another category (e.g. conversion rate by campaign group).</p>
+          <p><b style="color:var(--fg)">H&#8320;:</b> the two columns are independent. <b style="color:var(--fg)">Assumption:</b> expected counts &ge; 5 (we warn you). Cram&eacute;r&rsquo;s V shows association strength (0 none, 1 perfect).</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div><label class="lbl">Categorical column A</label><select id="x-a" class="inp"></select></div>
+          <div><label class="lbl">Categorical column B</label><select id="x-b" class="inp"></select></div>
+        </div>
+        <button class="btn btn-pri mt-3 t-run" data-test="chi2">Run test</button>
+        <div class="t-out mt-3"></div>
+      </details>
+      <details class="card g" id="t-mwu">
+        <summary>Mann-Whitney U (non-parametric)</summary>
+        <div class="text-xs mt-2 space-y-1" style="color:var(--fg2)">
+          <p><b style="color:var(--fg)">Use when:</b> comparing two groups on a skewed / ordinal / non-normal metric &mdash; tests whether one distribution tends to be larger, using ranks.</p>
+          <p><b style="color:var(--fg)">H&#8320;:</b> distributions are equal. Report medians alongside. Rank-biserial effect size: 0 = no tendency, &plusmn;1 = complete separation.</p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
+          <div><label class="lbl">Numeric column</label><select id="m-a" class="inp"></select></div>
+          <div><label class="lbl">Group column</label><select id="m-grp" class="inp"></select></div>
+          <div><label class="lbl">Group A</label><select id="m-ga" class="inp"></select></div>
+          <div><label class="lbl">Group B</label><select id="m-gb" class="inp"></select></div>
+        </div>
+        <button class="btn btn-pri mt-3 t-run" data-test="mwu">Run test</button>
+        <div class="t-out mt-3"></div>
+      </details>
+      <details class="card g" id="t-kw">
+        <summary>Kruskal-Wallis (non-parametric ANOVA)</summary>
+        <div class="text-xs mt-2 space-y-1" style="color:var(--fg2)">
+          <p><b style="color:var(--fg)">Use when:</b> comparing 3+ groups on a non-normal metric &mdash; rank-based alternative to ANOVA.</p>
+          <p><b style="color:var(--fg)">H&#8320;:</b> all group distributions equal. &epsilon;&sup2; effect size: ~.01 small, ~.06 medium, &gt; .14 large.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div><label class="lbl">Numeric column</label><select id="k-col" class="inp"></select></div>
+          <div><label class="lbl">Group column (3+)</label><select id="k-grp" class="inp"></select></div>
+        </div>
+        <button class="btn btn-pri mt-3 t-run" data-test="kw">Run test</button>
+        <div class="t-out mt-3"></div>
+      </details>
+      <div></div>
+    </div>
+  </div>
+
+  <div id="lab-sent" class="hidden grid lg:grid-cols-3 gap-4">
+    <div class="card">
+      <div class="flex items-center justify-between gap-2"><h2 style="margin:0">In-browser sentiment analysis (transformers.js + ONNX)</h2><button class="btn btn-xs btn-ghost" data-sample="reviews">Load sample: Reviews</button></div>
+      <p class="text-xs mb-3" style="color:var(--fg2)">DistilBERT / Twitter RoBERTa run locally via WebAssembly &mdash; no server, no API key. Models download once (~27&ndash;50 MB) and are cached in IndexedDB for offline reuse. Rows are sampled (seed 42), capped at 100, and scored in small batches with live progress.</p>
+      <label class="lbl">Model</label><select id="sent-model" class="inp mb-2"></select>
+      <label class="lbl">Text column</label><select id="sent-col" class="inp mb-2"></select>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="lbl">Rows to score (max 100)</label><input id="sent-rows" type="number" min="1" max="100" value="100" class="inp"></div>
+        <div><label class="lbl">Batch size (1&ndash;32)</label><input id="sent-batch" type="number" min="1" max="32" value="8" class="inp"></div>
+      </div>
+      <button id="btn-sent" class="btn btn-pri w-full mt-4">Score sentiment</button>
+      <div id="sent-barwrap" class="mt-3 hidden"><div class="pbar"><div id="sent-bar"></div></div><p id="sent-status" class="text-xs mt-1" style="color:var(--fg2)">idle</p></div>
+      <p class="text-xs mt-3" style="color:var(--fg2)">Long texts are truncated to 1000 characters. Results are written back to <span class="mono">df_master</span> as <span class="mono">sentiment_label</span> and <span class="mono">sentiment_score</span> &mdash; usable in graphs, models and tests like any other column.</p>
+    </div>
+    <div class="card lg:col-span-2 space-y-3">
+      <div id="sent-out"><p class="text-sm" style="color:var(--fg2)">Run a scoring pass to see results.</p></div>
+      <div id="sent-plot" class="plot" style="height:280px"></div>
+    </div>
+  </div>
+</section>
+
+<section id="ws-flow" class="hidden">
+  <div class="card flex flex-wrap items-center gap-2 mb-3">
+    <button id="wf-pal-toggle" class="btn btn-xs">Hide palette</button>
+    <button id="wf-run" class="btn btn-pri">Run pipeline</button>
+    <button id="wf-demo" class="btn">Example pipeline</button>
+    <button id="wf-clear" class="btn">Clear</button>
+    <button id="wf-zout" class="btn btn-xs" title="Zoom out">&minus;</button>
+    <button id="wf-zin" class="btn btn-xs" title="Zoom in">+</button>
+    <span class="text-xs" style="color:var(--fg2)">Drag palette items onto the canvas &middot; click an output port then an input port to wire (types are checked) &middot; click a wire to delete it &middot; drag empty space to pan, wheel to zoom &middot; click a node to edit &amp; inspect it below.</span>
+  </div>
+  <div class="flex gap-3 items-start">
+    <div id="wf-pal" class="card shrink-0 space-y-2" style="width:190px">
+      <h2>Node palette</h2>
+      <div class="pal-item" draggable="true" data-add="input">Input Data</div>
+      <div class="pal-item" draggable="true" data-add="filter">Filter / Query</div>
+      <div class="pal-item" draggable="true" data-add="transform">Transform / Features</div>
+      <div class="pal-item" draggable="true" data-add="split">Split Data</div>
+      <div class="pal-item" draggable="true" data-add="model">ML Model</div>
+      <div class="pal-item" draggable="true" data-add="evaluate">Evaluate / Visualize</div>
+      <p class="text-xs mt-3" style="color:var(--fg2)">Ports are type-checked: <b style="color:#5b6b8c">data</b>, <b style="color:#34d399">train</b>, <b style="color:#fbbf24">test</b>, <b style="color:#fb7185">scored</b>, <b style="color:#a78bfa">model</b>. Only Evaluate accepts model objects.</p>
+    </div>
+    <div class="flex-1 card" style="padding:.4rem">
+      <div id="wf-canvas" class="relative overflow-hidden" style="height:520px;cursor:grab;border-radius:.6rem">
+        <div id="wf-view" class="absolute" style="width:4000px;height:2600px;transform-origin:0 0">
+          <svg id="wf-svg" class="absolute" style="width:4000px;height:2600px;left:0;top:0;pointer-events:none"></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="wf-drawer" style="min-height:120px">
+    <div id="wf-drawer-body" class="text-sm" style="color:var(--fg2)">Select a node to edit its parameters and inspect its output at that exact pipeline step.</div>
+  </div>
+</section>
+
+</main>
+<div id="ov" class="fixed inset-0 z-50 flex items-center justify-center" style="background:var(--bg)">
+  <div class="card text-center" style="max-width:560px">
+    <h1 class="mb-2" style="font-size:1.5rem">CapyML <span style="color:var(--acc2)">Studio</span></h1>
+    <p class="text-sm mb-3" style="color:var(--fg2)">First launch downloads the Python runtime + scikit-learn + Plotly (~50 MB) once, then caches everything in IndexedDB for fully offline reuse.</p>
+    <div class="mb-2"><div style="display:inline-block;width:32px;height:32px;border-radius:50%;border:4px solid var(--acc);border-top-color:transparent;animation:cspin 1s linear infinite"></div></div>
+    <p id="ov-status" class="text-sm font-semibold">Starting...</p>
+    <p id="ov-mb" class="text-xs mt-1" style="color:var(--fg2)"></p>
+  </div>
+  <style>@keyframes cspin{to{transform:rotate(360deg)}}</style>
+</div>
+
+<script type="text/python" id="pysrc">
+import io, json, warnings, operator
+import numpy as np
+import pandas as pd
+import scipy.stats as st
+from math import comb
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet, LogisticRegression
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor, export_text
+from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, accuracy_score, classification_report, confusion_matrix, roc_auc_score
+
+DF = pd.DataFrame()
+NAME = ''
+SAMPLES = {}
+
+class E(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, np.integer): return int(o)
+        if isinstance(o, np.floating): return None if not np.isfinite(o) else float(o)
+        if isinstance(o, np.ndarray): return o.tolist()
+        return str(o)
+
+def J(o): return json.dumps(o, cls=E)
+def err(m): return J({'ok': False, 'error': str(m)})
+def f(x):
+    try: x = float(x)
+    except Exception: return None
+    return x if np.isfinite(x) else None
+
+def num_cols(df): return [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
+def cat_cols(df): return [c for c in df.columns if not pd.api.types.is_numeric_dtype(df[c])]
+
+def make_sample(name):
+    rng = np.random.RandomState(42)
+    if name == 'housing':
+        n = 800
+        sqft = rng.uniform(600, 4200, n).round(0)
+        beds = rng.randint(1, 6, n)
+        baths = rng.randint(1, 4, n) + rng.choice([0.0, 0.5], n)
+        age = rng.randint(0, 95, n)
+        garage = rng.randint(0, 3, n)
+        nbr = rng.choice(['Rural', 'Suburban', 'Urban'], n, p=[.2, .5, .3])
+        lot = (sqft * rng.uniform(1.5, 4, n)).round(0)
+        price = sqft * 180 + beds * 9000 + baths * 13000 - garage * 3000 - age * 800 + np.select([nbr == 'Urban', nbr == 'Suburban'], [28000, 9000], 0) + rng.normal(0, 26000, n)
+        df = pd.DataFrame({'sqft': sqft, 'bedrooms': beds, 'bathrooms': baths, 'house_age': age, 'garage': garage, 'lot_size': lot, 'neighborhood': nbr, 'price': np.round(np.maximum(price, 30000))})
+        nm = 'Housing Prices (synthetic demo)'
+    elif name == 'churn':
+        n = 900
+        tenure = rng.randint(1, 72, n)
+        charges = np.round(rng.uniform(20, 120, n), 2)
+        contract = rng.choice(['month-to-month', 'one-year', 'two-year'], n, p=[.55, .25, .20])
+        support = rng.randint(0, 9, n)
+        internet = rng.choice(['fiber', 'dsl', 'none'], n, p=[.45, .35, .20])
+        age = rng.randint(18, 80, n)
+        income = np.round(np.clip(rng.normal(55000, 20000, n), 15000, None))
+        logit = -1.1 + 0.32 * support + 0.03 * (charges - 70) - 0.045 * tenure + np.select([contract == 'month-to-month', contract == 'one-year'], [1.3, -0.3], -0.9) + np.select([internet == 'fiber'], [0.35], 0.0)
+        p = 1.0 / (1.0 + np.exp(-logit))
+        churn = rng.binomial(1, p)
+        df = pd.DataFrame({'tenure_months': tenure, 'monthly_charges': charges, 'contract': contract, 'support_calls': support, 'internet_service': internet, 'age': age, 'income': income, 'churn': np.where(churn == 1, 'yes', 'no')})
+        nm = 'Customer Churn (synthetic demo)'
+    elif name == 'reviews':
+        n = 160
+        pos = ['Excellent product, works perfectly and arrived quickly.', 'Great quality overall and I would definitely buy again.', 'Absolutely love it, fantastic value for the price.', 'Works great, setup was simple and the build feels sturdy.', 'Best purchase this year, five stars from me.', 'Very happy with this, brilliant product and great support.']
+        neg = ['Terrible quality, it broke the first time I used it.', 'Complete waste of money, does not work as advertised.', 'Very disappointed, cheap materials and flimsy design.', 'Stopped working after two days, awful experience.', 'Worst purchase ever, I am returning it immediately.', 'Awful, the support team ignored my emails for a week.']
+        neu = ['It works as expected, nothing more nothing less.', 'Average product, nothing special but the price is fair.', 'Okay for the price, does the basic job.', 'Arrived on time and the packaging was fine.', 'Standard item, meets basic needs.']
+        labs = rng.choice(['pos', 'neg', 'neu'], n, p=[.45, .35, .20])
+        text = [str(rng.choice(pos) if l == 'pos' else rng.choice(neg) if l == 'neg' else rng.choice(neu)) for l in labs]
+        rating = [int(rng.choice([4, 5]) if l == 'pos' else rng.choice([1, 2]) if l == 'neg' else 3) for l in labs]
+        df = pd.DataFrame({'review': text, 'true_sentiment': labs, 'rating': rating,
+                           'product': rng.choice(['earbuds', 'backpack', 'blender', 'keyboard', 'lamp'], n),
+                           'verified': np.where(rng.binomial(1, .7, n), 'yes', 'no'),
+                           'helpful_votes': rng.poisson(2, n)})
+        nm = 'Customer Reviews (synthetic demo)'
+    else:
+        n = 600
+        group = rng.choice(['A', 'B'], n)
+        spend = np.round(rng.normal(62, 15, n) + np.where(group == 'B', 6, 0), 2)
+        device = rng.choice(['mobile', 'desktop', 'tablet'], n, p=[.5, .35, .15])
+        spend = np.round(spend + np.select([device == 'desktop', device == 'tablet'], [4.0, -2.0], 0.0), 2)
+        converted = np.where(rng.binomial(1, np.where(group == 'A', 0.12, 0.18)), 'yes', 'no')
+        clicked = np.where(rng.binomial(1, np.where(group == 'A', 0.30, 0.38)), 'yes', 'no')
+        df = pd.DataFrame({'group': group, 'spend': spend, 'converted': converted, 'device': device, 'age': rng.randint(18, 75, n), 'clicked_ad': clicked})
+        nm = 'A/B Marketing Campaign (synthetic demo)'
+    SAMPLES[name] = nm
+    return df
+
+def sample(name):
+    global DF, NAME
+    DF = make_sample(name)
+    NAME = SAMPLES[name]
+    return info()
+
+def set_df(text, name):
+    global DF, NAME
+    NAME = str(name or 'dataset')
+    t = text.strip()
+    try:
+        if t[:1] in '{[':
+            obj = json.loads(t)
+            if isinstance(obj, list): DF = pd.DataFrame(obj)
+            elif isinstance(obj, dict) and obj and all(isinstance(v, list) for v in obj.values()): DF = pd.DataFrame(obj)
+            else: DF = pd.json_normalize(obj)
+        else:
+            DF = pd.read_csv(io.StringIO(text), sep=None, engine='python')
+    except Exception as e:
+        return err('Could not parse data: %s' % e)
+    if DF.empty or DF.shape[1] == 0: return err('No columns found.')
+    DF.columns = [str(c).strip() for c in DF.columns]
+    for c in cat_cols(DF):
+        s = DF[c].astype(str).str.strip()
+        DF[c] = s.mask(s.isin(['nan', 'None', '']), None)
+    return info()
+
+def info():
+    cols = []
+    for c in DF.columns:
+        d = {'name': str(c), 'type': 'num' if pd.api.types.is_numeric_dtype(DF[c]) else 'cat', 'nunique': int(DF[c].nunique()), 'nulls': int(DF[c].isna().sum())}
+        if d['type'] == 'cat' and d['nunique'] <= 30:
+            d['levels'] = sorted(str(v) for v in pd.unique(DF[c].dropna()))
+        cols.append(d)
+    return J({'ok': True, 'name': NAME, 'rows': int(DF.shape[0]), 'cols': cols, 'head': json.loads(DF.head(8).to_json(orient='records'))})
+
+def col_values(col, cap, seed):
+    if col not in DF.columns: return err('Column not found: %s' % col)
+    s = DF[col]
+    idx = np.flatnonzero(s.notna().values)
+    if len(idx) == 0: return err('No non-empty values in this column.')
+    if len(idx) > int(cap):
+        idx = np.random.RandomState(int(seed or 42)).choice(idx, int(cap), replace=False)
+    idx = np.sort(idx)
+    return J({'ok': True, 'rows': [[int(i), str(s.values[i])] for i in idx]})
+
+def add_sentiment(rows_s):
+    global DF
+    rows = json.loads(rows_s)
+    if not rows: return err('Nothing to add.')
+    DF['sentiment_label'] = None
+    DF['sentiment_score'] = None
+    for pos, lab, sco in rows:
+        p = int(pos)
+        if 0 <= p < len(DF):
+            DF.loc[DF.index[p], 'sentiment_label'] = str(lab)
+            DF.loc[DF.index[p], 'sentiment_score'] = float(sco)
+    DF['sentiment_score'] = pd.to_numeric(DF['sentiment_score'], errors='coerce')
+    return info()
+
+def df_json():
+    if DF.empty: return err('No dataset loaded.')
+    return J({'ok': True, 'name': NAME, 'records': json.loads(DF.to_json(orient='records'))})
+
+def df_csv():
+    if DF.empty: return ''
+    return DF.to_csv(index=False)
+
+def coerce(col, to):
+    if col not in DF.columns: return err('Column not found: %s' % col)
+    before = int(DF[col].isna().sum())
+    try:
+        if to == 'num':
+            DF[col] = pd.to_numeric(DF[col], errors='coerce')
+        elif to == 'int':
+            s = pd.to_numeric(DF[col], errors='coerce')
+            nn = s.dropna()
+            if len(nn) and not bool(np.all(np.equal(np.mod(nn.values.astype(float), 1), 0))):
+                raise Exception('Column "%s" has non-integer values (e.g. %.4g).' % (col, float(nn.iloc[0])))
+            DF[col] = s.astype('Int64')
+        elif to == 'str':
+            if pd.api.types.is_numeric_dtype(DF[col]):
+                DF[col] = DF[col].apply(lambda v: None if pd.isna(v) else str(v))
+            else:
+                s = DF[col].astype(str).str.strip()
+                DF[col] = s.mask(s.isin(['nan', 'None', '']), None)
+        else:
+            return err('Unknown target type: %s' % to)
+    except Exception as e:
+        return err('%s: %s' % (type(e).__name__, e))
+    after = int(DF[col].isna().sum())
+    r = json.loads(info())
+    r['note'] = 'Converted "%s" \u2192 %s \u00b7 %d unparseable value(s) became blank' % (col, to, after - before)
+    return J(r)
+
+def dummify(data, feats):
+    cats = [c for c in feats if c in cat_cols(data)]
+    if cats:
+        return pd.get_dummies(data[feats], columns=cats, drop_first=True)
+    return data[feats].astype(float)
+
+def prep_df(df, feats, target, test_size, seed, strat):
+    data = df[feats + [target]].dropna()
+    n = len(data)
+    if n < 10: raise Exception('Only %d complete rows (need 10+ after dropping missing values).' % n)
+    X = dummify(data, feats)
+    y = data[target]
+    if strat:
+        y = y.astype(str)
+        if y.nunique() < 2: raise Exception('Target needs at least 2 distinct classes.')
+        if (y.value_counts() < 2).any():
+            Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=test_size, random_state=seed)
+        else:
+            Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=test_size, random_state=seed, stratify=y)
+    else:
+        y = y.astype(float)
+        Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=test_size, random_state=seed)
+    return data, X, y, Xtr, Xte, ytr, yte
+
+def build_model(kind, sp, is_clf, seed):
+    a = float(sp.get('alpha', 1.0)); l1 = float(sp.get('l1_ratio', 0.5)); C = float(sp.get('C', 1.0))
+    md = sp.get('max_depth'); md = int(md) if md else None
+    ne = int(sp.get('n_estimators', 100)); lr = float(sp.get('learning_rate', 0.1)); deg = int(sp.get('degree', 2))
+    if kind == 'ols': m = LinearRegression()
+    elif kind == 'ridge': m = Ridge(alpha=a)
+    elif kind == 'lasso': m = Lasso(alpha=a, max_iter=100000)
+    elif kind == 'enet': m = ElasticNet(alpha=a, l1_ratio=l1, max_iter=100000)
+    elif kind == 'poly': m = make_pipeline(PolynomialFeatures(degree=deg, include_bias=False), LinearRegression())
+    elif kind == 'logreg': m = LogisticRegression(C=C, max_iter=10000)
+    elif kind == 'dt': m = (DecisionTreeClassifier if is_clf else DecisionTreeRegressor)(max_depth=md, random_state=seed)
+    elif kind == 'gbt': m = (GradientBoostingClassifier if is_clf else GradientBoostingRegressor)(n_estimators=ne, learning_rate=lr, max_depth=3, random_state=seed)
+    else: raise Exception('Unknown model: %s' % kind)
+    use_scale = bool(sp.get('scale', kind in ('ridge', 'lasso', 'enet', 'logreg')))
+    return (make_pipeline(StandardScaler(), m) if use_scale else m), use_scale
+
+def reg_coef_table(m, X, use_scale, kind):
+    if kind == 'poly':
+        names = list(m.named_steps['polynomialfeatures'].get_feature_names_out(X.columns))
+        lm = m.named_steps['linearregression']
+    elif use_scale:
+        names = list(X.columns); lm = m[-1]
+    else:
+        names = list(X.columns); lm = m
+    coefs = [[str(nm), f(cf)] for nm, cf in zip(names, np.ravel(lm.coef_))]
+    coefs.sort(key=lambda t: -abs(t[1] if t[1] is not None else 0))
+    return coefs
+
+def fit_model(df, sp):
+    target = sp.get('target')
+    if not target or target not in df.columns: raise Exception('Pick a target column.')
+    feats = sp.get('features')
+    feats = [c for c in df.columns if c != target] if feats is None else [c for c in feats if c != target]
+    if not feats: raise Exception('Pick at least one feature.')
+    kind = sp.get('model', 'ols')
+    is_clf = not pd.api.types.is_numeric_dtype(df[target])
+    if is_clf and kind in ('ols', 'ridge', 'lasso', 'enet', 'poly'): raise Exception('Target is categorical - use Logistic Regression, Decision Tree or Gradient Boosting.')
+    if (not is_clf) and kind == 'logreg': raise Exception('Target is numeric - use a regression model.')
+    seed = int(sp.get('seed', 42)); ts = float(sp.get('test_size', 0.2))
+    data, X, y, Xtr, Xte, ytr, yte = prep_df(df, feats, target, ts, seed, is_clf)
+    if kind == 'poly' and comb(X.shape[1] + int(sp.get('degree', 2)), int(sp.get('degree', 2))) > 3000:
+        raise Exception('Polynomial expansion too large - lower the degree or use fewer features.')
+    with warnings.catch_warnings(record=True) as wl:
+        warnings.simplefilter('always')
+        m, use_scale = build_model(kind, sp, is_clf, seed)
+        m.fit(Xtr, ytr)
+        wmsgs = [str(w.message) for w in wl][:3]
+    base = {'model': kind, 'target': target, 'n': int(len(data)), 'k': int(X.shape[1]), 'kind': 'classification' if is_clf else 'regression', 'scaled': bool(use_scale), 'warnings': wmsgs, 'seed': seed, 'test_size': ts}
+    if is_clf:
+        pred = m.predict(Xte)
+        labels = sorted(set(y.unique()) | set(pred))
+        try:
+            proba = m.predict_proba(Xte)
+            auc = f(roc_auc_score(yte, proba[:, 1])) if len(labels) == 2 else f(roc_auc_score(yte, proba, multi_class='ovr', average='macro'))
+        except Exception: auc = None
+        rep = classification_report(yte, pred, output_dict=True, zero_division=0)
+        coefs = None
+        if kind == 'logreg':
+            lm = m[-1] if use_scale else m
+            names = [str(c) for c in X.columns]
+            if len(lm.classes_) == 2:
+                coefs = [[n, f(v)] for n, v in zip(names, np.ravel(lm.coef_))]
+            else:
+                coefs = []
+                for ci, cls in enumerate(lm.classes_):
+                    for n, v in zip(names, lm.coef_[ci]):
+                        coefs.append([n + ' [' + str(cls) + ']', f(v)])
+            coefs.sort(key=lambda t: -abs(t[1] if t[1] is not None else 0))
+        imp = None
+        if kind in ('dt', 'gbt'):
+            imps = np.asarray(m.feature_importances_); order = np.argsort(-imps)
+            imp = [[str(X.columns[i]), f(imps[i])] for i in order]
+        rules = None
+        gbt_tree = None
+        if kind == 'dt':
+            try: rules = export_text(m, max_depth=3, feature_names=[str(c) for c in X.columns])
+            except Exception: rules = None
+        if kind == 'gbt':
+            try:
+                gbt_tree = 'Tree 1 of %d (learning_rate=%g):\n\n' % (int(sp.get('n_estimators', 100)), float(sp.get('learning_rate', .1))) + export_text(np.ravel(m.estimators_)[0], max_depth=2, feature_names=[str(c) for c in X.columns])
+            except Exception: gbt_tree = None
+        base.update({'accuracy': f(accuracy_score(yte, pred)), 'train_accuracy': f(accuracy_score(ytr, m.predict(Xtr))), 'auc': auc,
+                     'labels': [str(l) for l in labels], 'cm': confusion_matrix(yte, pred, labels=labels).tolist(),
+                     'report': rep, 'coefs': coefs, 'importances': imp, 'rules': rules, 'gbt_tree': gbt_tree, 'classes': int(len(labels))})
+    else:
+        pred = m.predict(Xte)
+        r2 = f(r2_score(yte, pred)); r2tr = f(r2_score(ytr, m.predict(Xtr)))
+        n, k = len(Xtr), X.shape[1]
+        adj = f(1 - (1 - (r2 if r2 is not None else 0)) * (n - 1) / (n - k - 1)) if n - k - 1 > 0 else None
+        coefs = None
+        imp = None
+        if kind in ('dt', 'gbt'):
+            imps = np.asarray(m.feature_importances_); order = np.argsort(-imps)
+            imp = [[str(X.columns[i]), f(imps[i])] for i in order]
+        else:
+            coefs = reg_coef_table(m, X, use_scale, kind)
+        ix = np.random.RandomState(42).choice(len(yte), min(400, len(yte)), replace=False)
+        avp = {'x': [float(v) for v in np.asarray(yte)[ix]], 'y': [float(v) for v in np.asarray(pred)[ix]]}
+        res = {'x': [float(v) for v in np.asarray(pred)[ix]], 'y': [float(a) - float(v) for a, v in zip(np.asarray(yte)[ix], np.asarray(pred)[ix])]}
+        curve = None
+        if len(feats) == 1 and kind in ('poly', 'dt', 'gbt') and feats[0] in num_cols(data):
+            xs = np.linspace(float(data[feats[0]].min()), float(data[feats[0]].max()), 60)
+            curve = {'x': [float(v) for v in xs], 'y': [float(v) for v in m.predict(pd.DataFrame({feats[0]: xs}))]}
+        rules = None
+        gbt_tree = None
+        if kind == 'dt':
+            try: rules = export_text(m, max_depth=3, feature_names=[str(c) for c in X.columns])
+            except Exception: rules = None
+        if kind == 'gbt':
+            try:
+                gbt_tree = 'Tree 1 of %d (learning_rate=%g):\n\n' % (int(sp.get('n_estimators', 100)), float(sp.get('learning_rate', .1))) + export_text(np.ravel(m.estimators_)[0], max_depth=2, feature_names=[str(c) for c in X.columns])
+            except Exception: gbt_tree = None
+        base.update({'r2': r2, 'r2_train': r2tr, 'adj_r2': adj, 'rmse': f(np.sqrt(mean_squared_error(yte, pred))),
+                     'mae': f(mean_absolute_error(yte, pred)), 'coefs': coefs, 'importances': imp, 'avp': avp, 'resid': res, 'curve': curve,
+                     'rules': rules, 'gbt_tree': gbt_tree,
+                     'feat_name': feats[0] if len(feats) == 1 else None})
+    return J({'ok': True, **base})
+
+def corr_data(df, cols, method):
+    if len(cols) < 2: raise Exception('Pick at least 2 numeric columns.')
+    sub = df[cols].astype(float)
+    nn = len(sub.dropna())
+    if nn < 3: raise Exception('Not enough complete rows.')
+    mat = sub.corr(method=method)
+    k = len(cols)
+    P = np.full((k, k), np.nan)
+    for i in range(k):
+        for j in range(k):
+            if i == j:
+                P[i, j] = 0.0
+                continue
+            pair = sub[[cols[i], cols[j]]].dropna()
+            if len(pair) >= 3:
+                try:
+                    r, pv = (st.pearsonr if method == 'pearson' else st.spearmanr)(pair.iloc[:, 0], pair.iloc[:, 1])
+                    if np.isfinite(pv): P[i, j] = float(pv)
+                except Exception:
+                    pass
+    R = [[None if not np.isfinite(v) else round(float(v), 3) for v in row] for row in mat.values]
+    PP = [[None if not np.isfinite(v) else float(v) for v in row] for row in P]
+    pairs = []
+    for i in range(k):
+        for j in range(i + 1, k):
+            r = mat.iloc[i, j]
+            if np.isfinite(r):
+                pairs.append([cols[i], cols[j], round(float(r), 3), f(P[i, j])])
+    pairs.sort(key=lambda t: -abs(t[2]))
+    return {'names': [str(c) for c in cols], 'matrix': R, 'pvals': PP, 'pairs': pairs[:12], 'n': nn}
+
+def graph_data(df, sp):
+    kind = sp['kind']; x = sp.get('x'); y = sp.get('y'); g = sp.get('group') or None
+    use = [c for c in [x, y, g] if c]
+    d = df.dropna(subset=use) if use else df
+    if len(d) == 0: raise Exception('No rows with complete values for the chosen fields.')
+    agg = sp.get('agg', 'mean'); bins = int(sp.get('bins', 20))
+    series = []
+    def smp(v, cap=1500):
+        v = list(v)
+        return v if len(v) <= cap else [v[i] for i in np.random.RandomState(42).choice(len(v), cap, replace=False)]
+    if kind in ('hist', 'box', 'violin'):
+        if y and y != x and pd.api.types.is_numeric_dtype(d[y]):
+            val, gcol = y, (g if g else x)
+        else:
+            val, gcol = x, (g if g else None)
+        if gcol == val: gcol = None
+        if gcol and gcol in d.columns:
+            for lev in d[gcol].value_counts().head(12).index:
+                vals = smp(d[d[gcol] == lev][val].astype(float).values)
+                if vals: series.append({'name': str(lev), 'x': [float(t) for t in vals]})
+        else:
+            series = [{'name': str(val), 'x': [float(t) for t in smp(d[val].astype(float).values)]}]
+        return {'kind': kind, 'series': series, 'bins': bins, 'xname': str(val), 'yname': str(val), 'n': int(len(d))}
+    if kind == 'scatter':
+        if not y: raise Exception('Scatter needs a Rows (Y) field.')
+        hasg = bool(g) and g != x and g != y and g in d.columns
+        d2 = d[[x, y] + ([g] if hasg else [])].copy()
+        d2[[x, y]] = d2[[x, y]].astype(float)
+        if len(d2) > 1500: d2 = d2.sample(1500, random_state=42)
+        d2 = d2.sort_values(x)
+        if hasg:
+            for lev in d2[g].value_counts().head(10).index:
+                gd = d2[d2[g] == lev]
+                series.append({'name': str(lev), 'x': [float(t) for t in gd[x]], 'y': [float(t) for t in gd[y]]})
+        else:
+            series = [{'name': '%s vs %s' % (y, x), 'x': [float(t) for t in d2[x]], 'y': [float(t) for t in d2[y]]}]
+        return {'kind': kind, 'series': series, 'xname': str(x), 'yname': str(y), 'n': int(len(d))}
+    if kind == 'pie':
+        vc = d[x].value_counts().head(12)
+        return {'kind': kind, 'series': [{'name': 'count', 'x': [str(i) for i in vc.index], 'y': [int(v) for v in vc.values]}], 'stat': 'count', 'xname': str(x), 'n': int(len(d))}
+    if kind == 'bar':
+        if y is None:
+            vc = d[x].value_counts().head(40)
+            return {'kind': kind, 'series': [{'name': 'count', 'x': [str(i) for i in vc.index], 'y': [int(v) for v in vc.values]}], 'stat': 'count', 'xname': str(x), 'n': int(len(d))}
+        if not pd.api.types.is_numeric_dtype(d[y]): raise Exception('Rows (Y) must be numeric for bars.')
+        if g and g != x and g != y:
+            piv = d.pivot_table(index=x, columns=g, values=y, aggfunc=agg)
+            order = piv.mean(axis=1).sort_values(ascending=False).index[:30]
+            piv = piv.loc[order]
+            series = [{'name': str(c), 'x': [str(i) for i in piv.index], 'y': [f(v) for v in piv[c]]} for c in piv.columns]
+        else:
+            gg = d.groupby(x)[y].agg(agg).sort_values(ascending=False).head(30)
+            series = [{'name': '%s of %s' % (agg, y), 'x': [str(i) for i in gg.index], 'y': [f(v) for v in gg.values]}]
+        return {'kind': kind, 'series': series, 'stat': agg, 'xname': str(x), 'yname': str(y), 'n': int(len(d))}
+    if kind in ('grouped', 'stacked', 'heatcat'):
+        gc = g if g else y
+        if not gc or gc == x: raise Exception('Need two categorical fields (X + Color/Y).')
+        ct = pd.crosstab(d[x], d[gc])
+        order = ct.sum(axis=1).sort_values(ascending=False).index[:15]
+        ct = ct.loc[order]
+        top = ct.sum(axis=0).sort_values(ascending=False).index[:10]
+        ct = ct[top]
+        if kind == 'heatcat':
+            return {'kind': kind, 'z': ct.values.tolist(), 'xlab': [str(c) for c in ct.columns], 'ylab': [str(i) for i in ct.index], 'xname': str(x), 'yname': str(gc), 'n': int(len(d))}
+        series = [{'name': str(c), 'x': [str(i) for i in ct.index], 'y': [int(v) for v in ct[c]]} for c in ct.columns]
+        return {'kind': kind, 'series': series, 'stat': 'count', 'xname': str(x), 'yname': str(gc), 'n': int(len(d))}
+    raise Exception('Unknown chart kind.')
+
+def ci_t(m, se, df_):
+    if se == 0 or df_ < 1: return None
+    h = st.t.ppf(0.975, df_) * se
+    return [f(m - h), f(m + h)]
+
+def do_test(df, sp):
+    t = sp['test']
+    if t == 'ttest1':
+        col = sp.get('col'); s = df[col].dropna().astype(float)
+        if len(s) < 2: raise Exception('Need 2+ values.')
+        mu = float(sp.get('mu', 0) or 0)
+        r = st.ttest_1samp(s, mu)
+        sd = float(s.std())
+        eff = f((float(s.mean()) - mu) / sd) if sd > 0 else None
+        return {'stat': f(r.statistic), 'p': f(r.pvalue), 'ci': ci_t(float(s.mean()), float(st.sem(s)), len(s) - 1),
+                'eff': eff, 'eff_name': "Cohen's d", 'n': int(len(s)), 'mean': f(s.mean()), 'sd': f(sd),
+                'text': 'Sample mean of %s = %.4g (sd %.4g, n=%d) vs hypothesized %.4g.' % (col, float(s.mean()), sd, len(s), mu)}
+    if t == 'ttest2':
+        col = sp.get('col'); grp = sp.get('grp')
+        sub = df[[col, grp]].dropna()
+        s = sub[col].astype(float)
+        gA, gB = sp.get('gA') or '', sp.get('gB') or ''
+        if not gA or not gB:
+            vc = sub[grp].value_counts(); gA, gB = str(vc.index[0]), str(vc.index[1])
+        a_ = s[sub[grp].astype(str) == gA]; b_ = s[sub[grp].astype(str) == gB]
+        if len(a_) < 2 or len(b_) < 2: raise Exception('Each group needs 2+ values (pick valid groups).')
+        eq = bool(sp.get('equal_var', False))
+        r = st.ttest_ind(a_, b_, equal_var=eq)
+        n1, n2 = len(a_), len(b_)
+        m1, m2 = float(a_.mean()), float(b_.mean())
+        v1, v2 = float(a_.var()), float(b_.var())
+        se = np.sqrt(v1 / n1 + v2 / n2)
+        if eq:
+            dfree = n1 + n2 - 2
+        else:
+            dfree = float((se ** 2) / (((v1 / n1) ** 2) / (n1 - 1) + ((v2 / n2) ** 2) / (n2 - 1)))
+        spooled = np.sqrt(((n1 - 1) * v1 + (n2 - 1) * v2) / (n1 + n2 - 2))
+        return {'stat': f(r.statistic), 'p': f(r.pvalue), 'ci': ci_t(m1 - m2, float(se), dfree), 'df': f(dfree),
+                'eff': f((m1 - m2) / spooled) if spooled > 0 else None, 'eff_name': "Cohen's d",
+                'gA': gA, 'gB': gB, 'n1': int(n1), 'n2': int(n2), 'm1': f(m1), 'm2': f(m2), 'sd1': f(a_.std()), 'sd2': f(b_.std()),
+                'welch': not eq,
+                'text': 'Mean %s: %s = %.4g (n=%d) vs %s = %.4g (n=%d). %s.' % (col, gA, m1, n1, gB, m2, n2, 'Welch t-test (no equal-variance assumption)' if not eq else "Student's t-test (equal variances assumed)")}
+    if t == 'ttestp':
+        d = df[[sp.get('col'), sp.get('colB')]].dropna().astype(float)
+        if len(d) < 2: raise Exception('Need 2+ complete pairs.')
+        a_ = d.iloc[:, 0]; b_ = d.iloc[:, 1]
+        r = st.ttest_rel(a_, b_)
+        diff = a_ - b_
+        sd = float(diff.std())
+        return {'stat': f(r.statistic), 'p': f(r.pvalue), 'ci': ci_t(float(diff.mean()), float(st.sem(diff)), len(d) - 1),
+                'eff': f(float(diff.mean()) / sd) if sd > 0 else None, 'eff_name': 'd (paired)',
+                'n': int(len(d)), 'm1': f(a_.mean()), 'm2': f(b_.mean()), 'md': f(diff.mean()),
+                'text': 'Mean %s = %.4g, mean %s = %.4g; mean paired difference = %.4g (n=%d pairs).' % (sp.get('col'), float(a_.mean()), sp.get('colB'), float(b_.mean()), float(diff.mean()), len(d))}
+    if t == 'anova':
+        col = sp.get('col'); grp = sp.get('grp')
+        sub = df[[col, grp]].dropna()
+        groups = [(str(gn), g[col].astype(float)) for gn, g in sub.groupby(grp)]
+        usable = [(gn, v) for gn, v in groups if len(v) >= 2]
+        if len(usable) < 2: raise Exception('Need 2+ groups with 2+ values.')
+        F, p = st.f_oneway(*[v for _, v in usable])
+        vals = sub[col].astype(float)
+        grand = float(vals.mean())
+        ssb = sum(len(v) * (float(v.mean()) - grand) ** 2 for _, v in usable)
+        sst = float(((vals - grand) ** 2).sum())
+        stats = [{'name': gn, 'n': int(len(v)), 'mean': f(v.mean()), 'sd': f(v.std()), 'median': f(v.median())} for gn, v in groups]
+        return {'stat': f(F), 'p': f(p), 'eff': f(ssb / sst) if sst > 0 else None,
+                'eff_name': 'eta squared (.01 small, .06 medium, .14 large)', 'groups': stats,
+                'text': 'One-way ANOVA of %s across %d groups of %s.' % (col, len(usable), grp)}
+    if t == 'chi2':
+        colA = sp.get('col'); colB = sp.get('colB')
+        sub = df[[colA, colB]].dropna()
+        if len(sub) < 5: raise Exception('Need 5+ complete rows.')
+        ct = pd.crosstab(sub[colA], sub[colB])
+        if ct.shape[0] < 2 or ct.shape[1] < 2: raise Exception('Need at least a 2x2 table.')
+        chi2, p, dof, exp = st.chi2_contingency(ct)
+        exp = np.asarray(exp, dtype=float)
+        n = int(len(sub))
+        v = f(np.sqrt(chi2 / (n * max(1, min(ct.shape[0] - 1, ct.shape[1] - 1)))))
+        return {'stat': f(chi2), 'p': f(p), 'dof': int(dof), 'eff': v, 'eff_name': "Cramer's V (0 none, 1 perfect)",
+                'rows': [str(i) for i in ct.index], 'cols': [str(c) for c in ct.columns],
+                'observed': ct.values.tolist(), 'expected': exp.tolist(), 'low_exp': bool((exp < 5).any()), 'n': n,
+                'text': 'Chi-square test of independence: %s vs %s (n=%d).' % (colA, colB, n)}
+    if t == 'mwu':
+        col = sp.get('col'); grp = sp.get('grp')
+        sub = df[[col, grp]].dropna()
+        gA, gB = sp.get('gA') or '', sp.get('gB') or ''
+        if not gA or not gB:
+            vc = sub[grp].value_counts(); gA, gB = str(vc.index[0]), str(vc.index[1])
+        a_ = sub[sub[grp].astype(str) == gA][col].astype(float)
+        b_ = sub[sub[grp].astype(str) == gB][col].astype(float)
+        if len(a_) < 2 or len(b_) < 2: raise Exception('Each group needs 2+ values.')
+        U, p = st.mannwhitneyu(a_, b_, alternative='two-sided')
+        n1, n2 = len(a_), len(b_)
+        return {'stat': f(U), 'p': f(p), 'ci': None, 'eff': f(1 - 2 * float(U) / (n1 * n2)),
+                'eff_name': 'rank-biserial (0 no tendency, 1 dominates)',
+                'gA': gA, 'gB': gB, 'n1': int(n1), 'n2': int(n2), 'm1': f(a_.median()), 'm2': f(b_.median()), 'med': True,
+                'text': 'Mann-Whitney U on %s: median %s = %.4g (n=%d) vs %s = %.4g (n=%d). Rank-based, no normality needed.' % (col, gA, float(a_.median()), n1, gB, float(b_.median()), n2)}
+    if t == 'kw':
+        col = sp.get('col'); grp = sp.get('grp')
+        sub = df[[col, grp]].dropna()
+        groups = [(str(gn), g[col].astype(float)) for gn, g in sub.groupby(grp)]
+        usable = [(gn, v) for gn, v in groups if len(v) >= 3]
+        if len(usable) < 2: raise Exception('Need 2+ groups with 3+ values.')
+        H, p = st.kruskal(*[v for _, v in usable])
+        n = sum(len(v) for _, v in usable); k = len(usable)
+        stats = [{'name': gn, 'n': int(len(v)), 'median': f(v.median()), 'mean': f(v.mean())} for gn, v in groups]
+        return {'stat': f(H), 'p': f(p), 'ci': None, 'eff': f((float(H) - k + 1) / (n - k)) if n > k else None,
+                'eff_name': 'epsilon squared (.01 small, .06 medium, .14 large)', 'groups': stats,
+                'text': 'Kruskal-Wallis of %s across %d groups of %s (rank-based ANOVA).' % (col, k, grp)}
+    raise Exception('Unknown test: %s' % t)
+
+def run(spec_s):
+    try:
+        sp = json.loads(spec_s)
+        t = sp.get('task')
+        if DF.empty: return err('No dataset loaded yet (Data workspace).')
+        if t == 'model':
+            return fit_model(DF, sp)
+        if t == 'corr':
+            cols = sp.get('cols') or num_cols(DF)
+            return J({'ok': True, **corr_data(DF, cols, sp.get('method', 'pearson'))})
+        if t == 'graph':
+            return J({'ok': True, **graph_data(DF, sp)})
+        if t == 'test':
+            return J({'ok': True, **do_test(DF, sp)})
+        return err('Unknown task: %s' % t)
+    except Exception as e:
+        return err('%s: %s' % (type(e).__name__, e))
+
+def flow_filter(df, p):
+    col = p.get('col'); op = p.get('op', '=='); val = p.get('value', '')
+    if col not in df.columns: raise Exception('Filter column missing.')
+    if pd.api.types.is_numeric_dtype(df[col]):
+        try: v = float(val)
+        except Exception: raise Exception('Filter value must be numeric for column %s.' % col)
+        fn = {'==': operator.eq, '!=': operator.ne, '>': operator.gt, '<': operator.lt, '>=': operator.ge, '<=': operator.le}.get(op)
+        if fn is None: raise Exception('Bad operator for numeric column.')
+        out = df[fn(df[col].astype(float), v)]
+    else:
+        sv = str(val)
+        ss = df[col].astype(str)
+        if op == 'contains': out = df[ss.str.contains(sv, case=False, regex=False)]
+        elif op == '==': out = df[ss == sv]
+        elif op == '!=': out = df[ss != sv]
+        else: raise Exception('Use ==, != or contains for text columns.')
+    if out.empty: raise Exception('Filter matched 0 rows.')
+    return out.copy()
+
+def flow_transform(df, p):
+    out = df.copy()
+    if p.get('calc_name') and p.get('calc_expr'):
+        try: out[p['calc_name']] = out.eval(p['calc_expr'])
+        except Exception as e: raise Exception('Calculated column failed: %s' % e)
+    dn = [c for c in (p.get('dropna_cols') or []) if c in out.columns]
+    if dn: out = out.dropna(subset=dn)
+    oh = [c for c in (p.get('onehot_cols') or []) if c in out.columns]
+    if oh:
+        for c in oh:
+            if out[c].nunique() > 50: raise Exception('Column %s has too many levels to one-hot encode.' % c)
+        out = pd.get_dummies(out, columns=oh, drop_first=True)
+    sc = [c for c in (p.get('scale_cols') or []) if c in out.columns and pd.api.types.is_numeric_dtype(out[c])]
+    if sc:
+        out[sc] = StandardScaler().fit_transform(out[sc].astype(float))
+    return out
+
+def fit_frame(df, sp):
+    target = sp.get('target')
+    if not target or target not in df.columns: raise Exception('Pick a target column.')
+    feats = [c for c in df.columns if c != target]
+    if not feats: raise Exception('Need at least one feature column.')
+    kind = sp.get('algo', sp.get('model', 'ols'))
+    is_clf = not pd.api.types.is_numeric_dtype(df[target])
+    if is_clf and kind in ('ols', 'ridge', 'lasso', 'enet', 'poly'): raise Exception('Categorical target - use logreg, dt or gbt.')
+    if (not is_clf) and kind == 'logreg': raise Exception('Numeric target - use a regression algorithm.')
+    data = df[feats + [target]].dropna()
+    if len(data) < 10: raise Exception('Only %d complete rows.' % len(data))
+    X = dummify(data, feats)
+    y = data[target].astype(str) if is_clf else data[target].astype(float)
+    seed = int(sp.get('seed', 42))
+    with warnings.catch_warnings(record=True) as wl:
+        warnings.simplefilter('always')
+        m, use_scale = build_model(kind, sp, is_clf, seed)
+        m.fit(X, y)
+        wmsgs = [str(w.message) for w in wl][:3]
+    if is_clf:
+        metric = {'name': 'Train accuracy', 'value': f(accuracy_score(y, m.predict(X)))}
+    else:
+        metric = {'name': 'Train R2', 'value': f(r2_score(y, m.predict(X)))}
+    rep = {'kind': 'classification' if is_clf else 'regression', 'algo': kind, 'target': target,
+           'metric': metric, 'warnings': wmsgs, 'scaled': bool(use_scale), 'n': int(len(data)), 'k': int(X.shape[1])}
+    if kind in ('dt', 'gbt'):
+        imps = np.asarray(m.feature_importances_); order = np.argsort(-imps)
+        rep['importances'] = [[str(X.columns[i]), f(imps[i])] for i in order]
+    elif not is_clf:
+        rep['coefs'] = reg_coef_table(m, X, use_scale, kind)
+    if is_clf and kind == 'logreg':
+        lm = m[-1] if use_scale else m
+        names = [str(c) for c in X.columns]
+        if len(lm.classes_) == 2:
+            rep['coefs'] = [[n, f(v)] for n, v in zip(names, np.ravel(lm.coef_))]
+        else:
+            cc = []
+            for ci, cls in enumerate(lm.classes_):
+                for n, v in zip(names, lm.coef_[ci]):
+                    cc.append([n + ' [' + str(cls) + ']', f(v)])
+            rep['coefs'] = cc
+        rep['coefs'].sort(key=lambda t_: -abs(t_[1] if t_[1] is not None else 0))
+    if is_clf and kind == 'dt':
+        try: rep['rules'] = export_text(m, max_depth=3, feature_names=[str(c) for c in X.columns])
+        except Exception: pass
+    return m, [str(c) for c in X.columns], rep, feats, target, is_clf
+
+def score_frame(m, xcols, frame, feats, target, is_clf):
+    d = frame[feats + [target]].dropna().copy()
+    cats = [c for c in feats if c in cat_cols(d)]
+    if cats:
+        X = pd.get_dummies(d[feats], columns=cats, drop_first=True).reindex(columns=xcols, fill_value=0)
+    else:
+        X = d[feats].astype(float).reindex(columns=xcols, fill_value=0)
+    d[target + '_pred'] = m.predict(X).astype(str) if is_clf else m.predict(X).astype(float)
+    return d
+
+def flow_metric(df, target, predcol):
+    y = df[target]; yh = df[predcol]
+    if pd.api.types.is_numeric_dtype(y):
+        return {'name': 'R2 (scored)', 'value': f(r2_score(y.astype(float), yh.astype(float)))}
+    return {'name': 'Accuracy (scored)', 'value': f(accuracy_score(y.astype(str), yh.astype(str)))}
+
+def exec_node(t, p, ins):
+    if t == 'input':
+        src = p.get('source', 'main')
+        if src == 'main':
+            if DF.empty: raise Exception('Load data in the Data workspace first.')
+            df = DF.copy(); nm = NAME
+        else:
+            df = make_sample(src); nm = SAMPLES.get(src, src)
+        return {'out': {'type': 'data', 'df': df}}, {'source': nm}
+    if t == 'filter':
+        return {'out': {'type': 'data', 'df': flow_filter(ins['in']['df'], p)}}, {}
+    if t == 'transform':
+        return {'out': {'type': 'data', 'df': flow_transform(ins['in']['df'], p)}}, {}
+    if t == 'split':
+        df = ins['in']['df']
+        ts = float(p.get('test_size', 0.2)); seed = int(p.get('seed', 42))
+        if len(df) < 10: raise Exception('Need 10+ rows to split.')
+        strat = None
+        if p.get('stratify') and p.get('strat_col') and p['strat_col'] in df.columns:
+            if df[p['strat_col']].notna().all() and df[p['strat_col']].value_counts().min() >= 2:
+                strat = df[p['strat_col']]
+        if strat is not None:
+            df = df.dropna(subset=[p['strat_col']])
+        tr, te = train_test_split(df, test_size=ts, random_state=seed, stratify=strat)
+        return {'train': {'type': 'data', 'df': tr}, 'test': {'type': 'data', 'df': te}}, {'test_size': ts, 'stratified': strat is not None}
+    if t == 'model':
+        tr = ins.get('train')
+        if not tr: raise Exception('Connect a Train/Data input.')
+        te = ins.get('test')
+        m, xcols, rep, feats, target, is_clf = fit_frame(tr['df'], p)
+        base = te['df'] if te else tr['df']
+        scored = score_frame(m, xcols, base, feats, target, is_clf)
+        extra = dict(rep)
+        extra['scored_on'] = 'test' if te else 'train (connect a Test port for held-out scores)'
+        if te:
+            extra['test_metric'] = flow_metric(scored, target, target + '_pred')
+            if is_clf:
+                labels = sorted(set(scored[target].astype(str)) | set(scored[target + '_pred'].astype(str)))
+                extra['cm'] = confusion_matrix(scored[target].astype(str), scored[target + '_pred'].astype(str), labels=labels).tolist()
+                extra['labels'] = labels
+        return {'model': {'type': 'model', 'model': m, 'meta': rep, 'xcols': xcols, 'feats': feats, 'target': target, 'is_clf': is_clf},
+                'scored': {'type': 'data', 'df': scored}}, extra
+    if t == 'evaluate':
+        v = ins.get('in')
+        if not v: raise Exception('Connect an input.')
+        if v['type'] == 'model':
+            return {}, {'model_summary': v['meta'], 'info': 'Trained model - inspect coefficients / importances in the drawer.'}
+        df = v['df']
+        cols = [str(c) for c in df.columns]
+        predcol = next((c for c in cols if c.endswith('_pred')), None)
+        if predcol:
+            base = predcol[:-5]
+            if base in cols:
+                ev = flow_metric(df, base, predcol)
+                ev['rows'] = int(len(df))
+                return {}, {'eval': ev, 'info': 'Scored data detected: %s vs %s.' % (base, predcol)}
+        return {}, {'eval': {'note': 'Data node - preview shown below. Connect scored data (from a Model node) for metrics.'}}
+    raise Exception('Unknown node type: %s' % t)
+
+def topo(nodes, deps):
+    order = []; state = {}
+    def visit(nid):
+        if state.get(nid) == 2: return
+        if state.get(nid) == 1: raise Exception('Cycle detected in pipeline.')
+        state[nid] = 1
+        for d in sorted(deps.get(nid, [])):
+            if d in nodes: visit(d)
+        state[nid] = 2; order.append(nid)
+    for nid in nodes: visit(nid)
+    return order
+
+def run_flow(spec_s):
+    try:
+        fl = json.loads(spec_s)
+        nodes = {n['id']: n for n in fl.get('nodes', [])}
+        edges = fl.get('edges', [])
+    except Exception as e:
+        return err('Bad pipeline spec: %s' % e)
+    deps = {nid: set() for nid in nodes}
+    ins = {}
+    for e in edges:
+        fr, to = e.get('from'), e.get('to')
+        if fr in nodes and to in nodes:
+            deps[to].add(fr)
+            ins.setdefault(to, {})[e.get('port', 'in')] = (fr, e.get('fromPort', 'out'))
+    try:
+        order = topo(nodes, deps)
+    except Exception as e:
+        return err(str(e))
+    store = {}; out = {}
+    for nid in order:
+        nd = nodes[nid]; t = nd.get('type'); p = nd.get('params') or {}
+        myins = {}; bad = False
+        for port, (src, spn) in ins.get(nid, {}).items():
+            v = store.get((src, spn))
+            if v is None: bad = True
+            else: myins[port] = v
+        if bad:
+            out[nid] = {'status': 'error', 'error': 'Upstream node failed or not connected.'}
+            continue
+        try:
+            outs, extra = exec_node(t, p, myins)
+            ports = {}
+            for pn, v in outs.items():
+                store[(nid, pn)] = v
+                if v['type'] == 'data':
+                    df = v['df']
+                    ports[pn] = {'rows': int(len(df)), 'cols': [str(c) for c in df.columns],
+                                 'preview': json.loads(df.head(6).to_json(orient='records'))}
+                else:
+                    ports[pn] = {'type': 'model'}
+            out[nid] = {'status': 'ok', 'report': {'ports': ports, 'extra': extra or {}}}
+        except Exception as e:
+            out[nid] = {'status': 'error', 'error': '%s: %s' % (type(e).__name__, e)}
+    return J({'ok': True, 'nodes': out})
+</script>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(x,d=3)=>x==null||x===undefined||isNaN(x)?'&mdash;':(+x).toFixed(d);
+const pfmt=p=>p==null?'n/a':p<0.001?'&lt; 0.001':p.toFixed(4);
+function toast(msg,kind){const t=document.createElement('div');t.className='badge '+(kind==='ok'?'b-ok':kind==='warn'?'b-no':'b-bad');t.style.cssText='position:fixed;bottom:18px;right:18px;z-index:80;max-width:440px;font-size:.78rem;white-space:normal';t.innerHTML=esc(msg);document.body.appendChild(t);setTimeout(()=>t.remove(),4200)}
+function tick(){return new Promise(r=>setTimeout(r,30))}
+function tableHTML(head,rows){let h='<div class="overflow-auto" style="max-height:300px"><table class="t"><thead><tr>'+head.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>';for(const r of rows){h+='<tr>'+(Array.isArray(r)?r.map(c=>'<td>'+c+'</td>').join(''):'<td>'+r+'</td>')+'</tr>'}return h+'</tbody></table></div>'}
+function statsHTML(pairs){return '<div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">'+pairs.map(([l,v])=>'<div class="stat"><span>'+esc(l)+'</span><b>'+v+'</b></div>').join('')+'</div>'}
+function fillSel(el,items,sel){el.innerHTML=items.map(o=>'<option value="'+esc(o.v)+'"'+(o.v===sel?' selected':'')+'>'+esc(o.t)+'</option>').join('')}
+function numSel(id,sel){fillSel(document.getElementById(id),colsByType('num').map(n=>({v:n,t:n})),sel)}
+function catSel(id,sel){fillSel(document.getElementById(id),colsByType('cat').map(n=>({v:n,t:n})),sel)}
+function allSel(id,sel,noneOpt){const items=colsByType('num').map(n=>({v:n,t:n+' (measure)'})).concat(colsByType('cat').map(n=>({v:n,t:n+' (dimension)'})));if(noneOpt)items.unshift({v:'',t:'\u2014 none \u2014'});fillSel(document.getElementById(id),items,sel)}
+function colsByType(t){return S.cols.filter(c=>!t||c.type===t).map(c=>c.name)}
+function typeOf(n){return (S.byName[n]||{}).type}
+function levelsOf(n){return (S.byName[n]||{}).levels||[]}
+let pyodide=null,runPy=null,setDFPy=null,samplePy=null,runFlowPy=null,colValPy=null,addSentPy=null,dfJsonPy=null,coercePy=null,csvPy=null;
+function lo(extra){return Object.assign({margin:{t:24,r:20,b:44,l:58},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{color:'#a1a1aa',size:11},xaxis:{gridcolor:'rgba(161,161,170,.13)',zerolinecolor:'rgba(161,161,170,.3)'},yaxis:{gridcolor:'rgba(161,161,170,.13)',zerolinecolor:'rgba(161,161,170,.3)'},showlegend:false,title:{text:'',font:{size:12.5,color:'#d4d4d8'}}},extra||{})}
+function plot(id,traces,layout,config){if(typeof Plotly==='undefined')return;Plotly.newPlot(id,traces,lo(layout),Object.assign({responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']},config||{}))}
+async function boot(){
+  try{
+    ovMB();$('#ov-status').textContent='Loading UI toolkit (Tailwind + Plotly)...';
+    if(typeof tailwind==='undefined')await fallbackScript(TW_URL);
+    if(!await cachedScript(PLOTLY_URL,()=>typeof Plotly!=='undefined'))await fallbackScript(PLOTLY_URL);
+    if(typeof Plotly==='undefined')throw new Error('Plotly failed to load (network?)');
+    $('#ov-status').textContent='Downloading Python runtime (Pyodide, ~10 MB)...';
+    let indexURL=PYODIDE_URL;
+    try{const r=await realFetch('./pyodide/pyodide.mjs',{method:'HEAD'});if(r.ok){indexURL='./pyodide/';$('#ov-status').textContent='Using local ./pyodide/ runtime...'}}catch(e){}
+    const loadPyodide=await importCached(indexURL+'pyodide.mjs');
+    pyodide=await loadPyodide({indexURL});
+    $('#ov-status').textContent='Loading pandas + scipy + scikit-learn (~35 MB, first time only)...';
+    await pyodide.loadPackage(['pandas','scipy','scikit-learn']);
+    $('#ov-status').textContent='Importing libraries (10-20 s)...';await tick();
+    await pyodide.runPythonAsync(document.getElementById('pysrc').textContent);
+    runPy=pyodide.globals.get('run');setDFPy=pyodide.globals.get('set_df');samplePy=pyodide.globals.get('sample');runFlowPy=pyodide.globals.get('run_flow');colValPy=pyodide.globals.get('col_values');addSentPy=pyodide.globals.get('add_sentiment');dfJsonPy=pyodide.globals.get('df_json');coercePy=pyodide.globals.get('coerce');csvPy=pyodide.globals.get('df_csv');
+    S.ready=true;
+    const n=await idbCount();
+    $('#hdr-status').textContent=n>0?('Offline Ready \u00b7 '+n+' assets cached'):('Online \u00b7 cache in progress');
+    $('#hdr-status').className='badge b-ok';
+    $('#ov').remove();
+    toast('CapyML Studio ready \u2014 everything runs locally in your browser.','ok');
+  }catch(e){
+    $('#ov-status').textContent='Failed: '+e.message;
+    toast('Startup failed: '+e.message);
+  }
+}
+$('#purge-btn').onclick=async()=>{await idbClear();toast('Cache purged \u2014 reloading.','ok');setTimeout(()=>location.reload(),600)};
+$('#xlsx-btn').onclick=()=>withBtn('#xlsx-btn',async()=>{
+  if(!S.ready)throw new Error('Python is still loading...');
+  await ensureXL();
+  const d=JSON.parse(dfJsonPy());
+  if(!d.ok)throw new Error(d.error);
+  const wb=new ExcelJS.Workbook();
+  const mk=(name,rows)=>{
+    const s=wb.addWorksheet(name.replace(/[\\\/?*\[\]:]/g,'-').slice(0,31));
+    if(rows&&rows.length){
+      const keys=Object.keys(rows[0]);
+      s.columns=keys.map(k=>({header:k,key:k,width:Math.min(42,Math.max(10,k.length+3))}));
+      s.addRows(rows);
+    }
+    return s;
+  };
+  mk('Dataset',d.records);
+  for(const[nm,rows]of Object.entries(S.sheets))mk(nm,rows);
+  const pngs=[];
+  if(typeof Plotly!=='undefined'){
+    for(const[id,title]of CHART_SOURCES){
+      const el=document.getElementById(id);
+      if(el&&el.classList.contains('js-plotly-plot')&&el.data&&el.data.length){
+        try{pngs.push([title,await Plotly.toImage(el,{format:'png',width:1000,height:560})])}catch(e){}
+      }
+    }
+  }
+  if(pngs.length){
+    const cs=wb.addWorksheet('Charts');let row=1;
+    for(const[t,du]of pngs){
+      const imgId=wb.addImage({base64:du,extension:'png'});
+      cs.getCell(row,1).value=t;
+      cs.addImage(imgId,{tl:{col:.3,row:row},br:{col:26,row:row+15}});
+      row+=17;
+    }
+  }
+  const buf=await wb.xlsx.writeBuffer();
+  dl(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'CapyML_Export.xlsx');
+  toast('Exported Dataset'+(Object.keys(S.sheets).length?' + '+Object.keys(S.sheets).length+' result sheet(s)':'')+(pngs.length?' + '+pngs.length+' chart PNG(s)':'')+' \u2192 CapyML_Export.xlsx','ok');
+});
+$('#csv-btn').onclick=async()=>{
+  if(!S.ready){toast('Python is still loading...');return}
+  const csv=csvPy();
+  if(!csv||!csv.trim()){toast('No dataset loaded.');return}
+  dl(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),'CapyML_Dataset.csv');
+  toast('Dataset \u2192 CapyML_Dataset.csv (results & charts go to the Excel export)','ok');
+};
+$('#theme-btn').onclick=()=>{const b=document.body;b.classList.toggle('light');$('#theme-btn').textContent=b.classList.contains('light')?'Dark':'Light'};
+$$('[data-ws]').forEach(b=>b.onclick=()=>showWS(b.dataset.ws));
+function showWS(id){['data','viz','lab','flow'].forEach(k=>$('#ws-'+k).classList.toggle('hidden',k!==id));$$('[data-ws]').forEach(b=>b.classList.toggle('nav-on',b.dataset.ws===id))}
+$$('[data-lab]').forEach(b=>b.onclick=()=>showLab(b.dataset.lab));
+function showLab(id){['lin','clf','nl','tests','sent'].forEach(k=>$('#lab-'+k).classList.toggle('hidden',k!==id));$$('[data-lab]').forEach(b=>b.classList.toggle('sub-on',b.dataset.lab===id))}
+function applyData(r){
+  S.cols=r.cols;S.byName={};r.cols.forEach(c=>S.byName[c.name]=c);
+  $('#data-meta').innerHTML='<b style="color:var(--fg)">'+esc(r.name)+'</b> &middot; '+r.rows+' rows \u00d7 '+r.cols.length+' columns &middot; <span class="mono">df_master</span> ready.';
+  $('#col-table').innerHTML='<div class="overflow-auto" style="max-height:260px"><table class="t"><thead><tr><th>Column</th><th>Type</th><th>Unique</th><th>Missing</th></tr></thead><tbody>'+r.cols.map(c=>'<tr data-col="'+esc(c.name)+'"><td><b>'+esc(c.name)+'</b></td><td><span class="badge '+(c.type==='num'?'b-ok':'b-no')+'">'+(c.type==='num'?'numeric':'categorical')+'</span></td><td>'+c.nunique+'</td><td>'+c.nulls+'</td></tr>').join('')+'</tbody></table></div>';
+  $('#preview').innerHTML=tableHTML(r.cols.map(c=>c.name),(r.head||[]).map(row=>r.cols.map(c=>row[c.name]===null||row[c.name]===undefined?'<span style="opacity:.4">null</span>':esc(row[c.name]))));
+  populateAll();
+  renderSurvey();
+  toast('Dataset loaded: '+r.name+' ('+r.rows+' rows)','ok');
+}
+async function loadText(text,name){if(!S.ready){toast('Python is still loading...');return}const r=JSON.parse(setDFPy(text,name));if(!r.ok){toast(r.error);return}applyData(r)}
+let ctxEl=null;
+function closeCtx(){if(ctxEl){ctxEl.remove();ctxEl=null}}
+document.addEventListener('click',closeCtx);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCtx()});
+$('#col-table').addEventListener('contextmenu',e=>{
+  const tr=e.target.closest('tr[data-col]');
+  if(!tr)return;
+  e.preventDefault();
+  closeCtx();
+  const col=tr.dataset.col;
+  const t=typeOf(col);
+  const items=t==='num'?[['str','Convert to text'],['int','Convert to integer']]:[['num','Try convert to number'],['int','Try convert to integer'],['str','Normalize as text']];
+  ctxEl=document.createElement('div');
+  ctxEl.className='ctxmenu';
+  ctxEl.style.left=Math.min(e.clientX,innerWidth-240)+'px';
+  ctxEl.style.top=Math.min(e.clientY,innerHeight-34*(items.length+1))+'px';
+  ctxEl.innerHTML='<div class="ctx-h">'+esc(col)+' \u00b7 currently '+(t==='num'?'numeric':'text')+'</div>'+items.map(([v,l])=>'<div class="ctx-i" data-co="'+v+'">'+esc(l)+'</div>').join('');
+  document.body.appendChild(ctxEl);
+  ctxEl.querySelectorAll('.ctx-i').forEach(it=>it.onclick=async()=>{
+    const to=it.dataset.co;
+    closeCtx();
+    if(!S.ready){toast('Python is still loading...');return}
+    if(typeOf(col)!=='num'&&(to==='num'||to==='int')&&!confirm('Values that cannot be parsed will become blank. Continue?'))return;
+    try{const res=JSON.parse(coercePy(col,to));if(!res.ok)throw new Error(res.error);applyData(res);toast(res.note||'Column updated','ok')}catch(err){toast(err.message)}
+  });
+});
+async function loadSample(k){if(!S.ready){toast('Python is still loading...');return}const r=JSON.parse(samplePy(k));if(!r.ok){toast(r.error);return}applyData(r)}
+$$('[data-sample]').forEach(b=>b.onclick=()=>loadSample(b.dataset.sample));
+async function ensureXLSX(){if(typeof XLSX!=='undefined')return;if(!await cachedScript(XLSX_URL,()=>typeof XLSX!=='undefined'))await fallbackScript(XLSX_URL);if(typeof XLSX==='undefined')throw new Error('Excel engine (SheetJS) failed to load.')}
+async function ensureXL(){if(typeof ExcelJS!=='undefined')return;if(!await cachedScript(EXCELJS_URL,()=>typeof ExcelJS!=='undefined'))await fallbackScript(EXCELJS_URL);if(typeof ExcelJS==='undefined')throw new Error('Excel writer (ExcelJS) failed to load.')}
+const CHART_SOURCES=[['g-plot','Visual builder chart'],['corr-plot','Correlation matrix'],['lin-coef','Linear model coefficients'],['lin-avp','Actual vs predicted'],['lin-res','Linear model residuals'],['cl-cm','Confusion matrix'],['cl-imp','Feature importance / coefficients'],['nl-curve','Fitted curve'],['nl-res','Non-linear residuals'],['sent-plot','Sentiment label counts']];
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+async function loadAny(f){
+  if(!/\.(xlsx|xls)$/i.test(f.name))return loadText(await f.text(),f.name);
+  await ensureXLSX();
+  const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+  if(!rows.length)throw new Error('Empty sheet.');
+  const seen={};
+  const head=rows[0].map((h,i)=>{let k=String(h==null||h===''?'column'+(i+1):h).trim()||('column'+(i+1));if(seen[k]){seen[k]++;k=k+'_'+seen[k]}else seen[k]=1;return k});
+  const recs=rows.slice(1).filter(r=>r.some(v=>v!=null&&v!=='')).map(r=>{const o={};head.forEach((h,i)=>{let v=r[i];if(v instanceof Date)v=v.toISOString().slice(0,10);o[h]=v});return o});
+  if(!recs.length)throw new Error('No data rows found.');
+  loadText(JSON.stringify(recs),f.name+' ('+wb.SheetNames[0]+')');
+}
+$('#file-in').onchange=async e=>{const f=e.target.files[0];if(f){try{await loadAny(f)}catch(err){toast(err.message)}}};
+const dz=$('#drop');
+['dragover','dragenter'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drop-hot')}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drop-hot')}));
+dz.addEventListener('drop',async e=>{const f=e.dataTransfer.files[0];if(f){try{await loadAny(f)}catch(err){toast(err.message)}}});
+$('#btn-paste').onclick=()=>{const t=$('#paste-ta').value.trim();if(t)loadText(t,'Pasted data')};
+function featGrid(id,exclude){document.getElementById(id).innerHTML=S.cols.map(c=>'<label class="chip"><input type="checkbox" value="'+esc(c.name)+'"'+(c.name===exclude?'':' checked')+'>'+esc(c.name)+'<span style="opacity:.5">'+(c.type==='num'?'#':'abc')+'</span></label>').join('')}
+function checkedVals(id){return $$('#'+id+' input:checked').map(i=>i.value)}
+function fillGroups(pre){const grp=$('#'+pre+'-grp').value;const lev=levelsOf(grp);fillSel($('#'+pre+'-ga'),[{v:'',t:'(auto)'}].concat(lev.map(l=>({v:l,t:l}))),'');fillSel($('#'+pre+'-gb'),[{v:'',t:'(auto)'}].concat(lev.map(l=>({v:l,t:l}))),'')}
+function populateAll(){
+  const nums=colsByType('num'),cats=colsByType('cat');
+  const lastNum=nums[nums.length-1]||'',firstNum=nums[0]||'',secondNum=nums[1]||firstNum;
+  const firstCat=cats[0]||'',secondCat=cats[1]||firstCat;
+  numSel('lin-target',lastNum);numSel('nl-target',lastNum);catSel('cl-target',firstCat);
+  ['lin','cl','nl'].forEach(t=>featGrid(t+'-feats',$('#'+t+'-target').value));
+  [['lin-target','lin-feats'],['cl-target','cl-feats'],['nl-target','nl-feats']].forEach(([tg,gd])=>{$('#'+tg).onchange=()=>{const v=$('#'+tg).value;$$('#'+gd+' input').forEach(cb=>{if(cb.value===v)cb.checked=false})}});
+  numSel('t1-col',firstNum);$('#t1-mu').value='0';
+  numSel('t2-col',firstNum);catSel('t2-grp',firstCat);fillGroups('t2');
+  numSel('tp-a',firstNum);numSel('tp-b',secondNum);
+  numSel('av-col',firstNum);catSel('av-grp',firstCat);
+  catSel('x-a',firstCat);catSel('x-b',secondCat);
+  numSel('m-a',firstNum);catSel('m-grp',firstCat);fillGroups('m');
+  numSel('k-col',firstNum);catSel('k-grp',firstCat);
+  allSel('g-x',firstNum);allSel('g-y','',true);allSel('g-g','',true);
+  $('#corr-cols').innerHTML=S.cols.filter(c=>c.type==='num').map(c=>'<label class="chip"><input type="checkbox" checked value="'+esc(c.name)+'">'+esc(c.name)+'</label>').join('');
+  if(cats.length)catSel('sent-col',firstCat);else allSel('sent-col','');
+  renderFields();
+  graphKinds();
+}
+$('#t2-grp').onchange=()=>fillGroups('t2');
+$('#m-grp').onchange=()=>fillGroups('m');
+function renderFields(){
+  const dims=colsByType('cat').slice().sort();
+  const meas=colsByType('num').slice().sort();
+  const chip=(n,cls)=>'<div class="fld" draggable="true" data-fld="'+esc(n)+'"><span style="color:'+cls+'">'+esc(n)+'</span><span class="fa"><button class="fab" data-shelf="g-x" data-f="'+esc(n)+'">X</button><button class="fab" data-shelf="g-y" data-f="'+esc(n)+'">Y</button><button class="fab" data-shelf="g-g" data-f="'+esc(n)+'">C</button></span></div>';
+  $('#fld-dims').innerHTML=dims.length?dims.map(n=>chip(n,'#5b9bd5')).join(''):'<p class="text-xs" style="color:var(--fg2)">no dimensions &mdash; load a dataset</p>';
+  $('#fld-meas').innerHTML=meas.length?meas.map(n=>chip(n,'#4da860')).join(''):'<p class="text-xs" style="color:var(--fg2)">no measures &mdash; load a dataset</p>';
+}
+['fld-dims','fld-meas'].forEach(id=>{const el=document.getElementById(id);el.addEventListener('dragstart',e=>{const f=e.target.closest('.fld');if(f){e.dataTransfer.setData('text/plain',f.dataset.fld);e.dataTransfer.effectAllowed='copy'}})});
+$$('.shelf').forEach(sh=>{
+  sh.addEventListener('dragover',e=>{e.preventDefault();sh.classList.add('drop-hot')});
+  sh.addEventListener('dragleave',()=>sh.classList.remove('drop-hot'));
+  sh.addEventListener('drop',e=>{
+    e.preventDefault();sh.classList.remove('drop-hot');
+    const f=e.dataTransfer.getData('text/plain');
+    if(f){document.getElementById(sh.dataset.shelf).value=f;graphKinds();if(S.lastGraph)runGraph(S.lastGraph.orig)}
+  });
+});
+document.addEventListener('click',e=>{
+  const fab=e.target.closest('.fab');
+  if(fab){const el=document.getElementById(fab.dataset.shelf);if(el){el.value=fab.dataset.f;graphKinds();if(S.lastGraph)runGraph(S.lastGraph.orig)}return}
+  const fa=e.target.closest('[data-fa]');
+  if(fa){$$('#'+fa.dataset.fa+' input').forEach(c=>c.checked=true);return}
+  const fn=e.target.closest('[data-fn]');
+  if(fn){$$('#'+fn.dataset.fn+' input').forEach(c=>c.checked=false);return}
+});
+async function run(spec){if(!S.ready)throw new Error('Python is still loading...');if(!S.cols.length)throw new Error('Load a dataset first (Data workspace).');const r=JSON.parse(runPy(JSON.stringify(spec)));if(!r.ok)throw new Error(r.error);return r}
+async function withBtn(btn,fn){const b=$(btn);b.disabled=true;const t=b.textContent;b.textContent='Running...';try{await tick();await fn()}catch(e){toast(e.message)}finally{b.disabled=false;b.textContent=t}}
+function bindCards(name,fn){$$('input[name='+name+']').forEach(r=>{r.addEventListener('change',()=>{$$('input[name='+name+']').forEach(x=>x.closest('.model-card').classList.toggle('sel',x.checked));if(fn)fn()})});const c=document.querySelector('input[name='+name+']:checked');if(c)c.closest('.model-card').classList.add('sel')}
+function syncWhen(section,radioName){const upd=()=>{const v=document.querySelector('input[name='+radioName+']:checked').value;$$('#'+section+' [data-when]').forEach(el=>el.classList.toggle('hidden',!el.dataset.when.split(' ').includes(v)))};$$('input[name='+radioName+']').forEach(r=>r.addEventListener('change',upd));upd()}
+function bindRange(id,out,fn){const r=$('#'+id),o=$('#'+out);const u=()=>{o.textContent=fn?fn(r.value):r.value};r.addEventListener('input',u);u()}
+const MATH={
+ ols:{n:'Ordinary Least Squares',eq:'ŷ = β₀ + β₁x₁ + β₂x₂ + … + βₖxₖ',obj:'argmin  Σ (yᵢ − ŷᵢ)²',txt:'Fits the weighted sum that minimizes squared error. Interpretable baseline; assumes linearity, independent errors, constant variance.'},
+ ridge:{n:'Ridge (L2 penalty)',eq:'ŷ = β₀ + Σ βⱼxⱼ',obj:'argmin  Σ(yᵢ − ŷᵢ)² + α·Σ βⱼ²',txt:'Squared penalty on coefficient size — shrinks smoothly, tames multicollinearity. Larger alpha = stronger shrinkage.'},
+ lasso:{n:'LASSO (L1 penalty)',eq:'ŷ = β₀ + Σ βⱼxⱼ',obj:'argmin  Σ(yᵢ − ŷᵢ)² + α·Σ |βⱼ|',txt:'Absolute-value penalty drives weak coefficients to exactly 0 — feature selection built in.'},
+ enet:{n:'ElasticNet (L1 + L2)',eq:'ŷ = β₀ + Σ βⱼxⱼ',obj:'argmin  Σ(yᵢ−ŷᵢ)² + α[ ρ·Σ|βⱼ| + (1−ρ)·Σβⱼ² ]',txt:'Blends LASSO sparsity with Ridge stability: l1_ratio ρ = 0 → Ridge, ρ = 1 → LASSO.'},
+ poly:{n:'Polynomial Regression',eq:'ŷ = β₀ + β₁x + β₂x² + … + β_d·x^d',obj:'least squares on expanded polynomial terms',txt:'Linear regression on x, x², x³… — smooth curves. High degrees overfit quickly.'},
+ logreg:{n:'Logistic Regression',eq:'P(y=1|x) = 1 / ( 1 + e^−(β₀ + β₁x₁ + … + βₖxₖ) )',obj:'argmax  ℓ(β) − (1/C)·Σ βⱼ²',txt:'Linear boundary in log-odds space; each coefficient is a log-odds per unit. Smaller C = stronger regularization.'},
+ dt:{n:'Decision Tree',eq:'if xⱼ ≤ t : left, else : right  (recursive partition)',obj:'splits minimize Gini/entropy (classification) or MSE (regression)',txt:'Human-readable rules; captures non-linear boundaries and interactions; max_depth controls overfitting. The trained rules print after fitting.'},
+ gbt:{n:'Gradient Boosted Trees',eq:'F_M(x) = F₀(x) + ν · Σₘ₌₁..M fₘ(x)',obj:'each shallow tree fₘ fits the residuals left by Fₘ₋₁',txt:'A sequence of small trees, each correcting the last one\u2019s errors. ν = learning_rate, M = n_estimators. The first tree of the trained ensemble prints after fitting.'}
+};
+function mathHTML(k){
+  const m=MATH[k];if(!m)return'';
+  return '<div style="background:var(--card2);border:1px solid var(--bd);border-radius:.6rem;padding:.6rem .7rem"><b style="color:var(--fg)">'+m.n+'</b><div class="mono" style="margin:.4rem 0 .3rem;color:var(--fg);font-size:.8rem">'+esc(m.eq)+'</div><div class="mono" style="color:var(--fg2);font-size:.68rem;margin-bottom:.35rem">'+esc(m.obj)+'</div><p style="color:var(--fg2);margin:0">'+esc(m.txt)+'</p></div>';
+}
+['lin','cl','nl'].forEach(p=>{syncWhen('lab-'+p,p+'-model');bindCards(p+'-model',()=>{const sc=$('#'+p+'-scale');if(sc)sc.checked=['ridge','lasso','enet','logreg'].includes(document.querySelector('input[name='+p+'-model]:checked').value);const info=$('#'+p+'-info');if(info)info.innerHTML=mathHTML(document.querySelector('input[name='+p+'-model]:checked').value)});const info0=$('#'+p+'-info');if(info0)info0.innerHTML=mathHTML(document.querySelector('input[name='+p+'-model]:checked').value)});
+bindRange('lin-alpha','lin-alpha-v');bindRange('lin-l1','lin-l1-v');bindRange('lin-ts','lin-ts-v',v=>Math.round(v*100)+'%');
+bindRange('cl-depth','cl-depth-v');bindRange('cl-nest','cl-nest-v');bindRange('cl-lr','cl-lr-v');bindRange('cl-ts','cl-ts-v',v=>Math.round(v*100)+'%');
+bindRange('nl-degree','nl-degree-v');bindRange('nl-depth','nl-depth-v');bindRange('nl-nest','nl-nest-v');bindRange('nl-lr','nl-lr-v');bindRange('nl-ts','nl-ts-v',v=>Math.round(v*100)+'%');
+[['cl','cl-unlim','cl-depth'],['nl','nl-unlim','nl-depth']].forEach(([p,cb,rg])=>{$('#'+cb).onchange=()=>{$('#'+rg).disabled=$('#'+cb).checked}});
+const SV=[
+ {id:'feat',q:'Find the most important features driving a numeric outcome',recs:[
+   {t:'Correlation screen',w:'Rank numeric pairs by |r| for a quick read of linear drivers.',go:()=>svCorr()},
+   {t:'Ridge / LASSO coefficients',w:'Ridge = stable ranking when features correlate; LASSO zeroes weak ones. Standardized coefficients.',go:()=>svModel('lin','ridge')},
+   {t:'Gradient Boosted importances',w:'Captures non-linear effects; cross-check against Ridge.',go:()=>svModel('lin','gbt')}]},
+ {id:'counts',q:'Prove a significant difference in counts / proportions across groups',recs:[
+   {t:'Chi-square test of independence',w:'Counts of one category vs another; Cram\u00e9r\u2019s V for strength; observed vs expected tables.',go:()=>svTest('chi2')},
+   {t:'See it: stacked bars of the contingency table',w:'The visual twin of the chi-square test.',go:()=>svGraphCat()}]},
+ {id:'twog',q:'Compare the average of a metric between two groups',recs:[
+   {t:'Two-sample t-test (Welch)',w:'Parametric; assumes ~normal data. Reports means, CI and Cohen\u2019s d.',go:()=>svTest('ttest2')},
+   {t:'Mann-Whitney U',w:'Non-parametric fallback for skewed / ordinal data.',go:()=>svTest('mwu')}]},
+ {id:'cat',q:'Predict a category or yes/no outcome',recs:[
+   {t:'Logistic Regression',w:'Interpretable linear baseline with coefficients.',go:()=>svModel('cl','logreg')},
+   {t:'Gradient Boosted Trees',w:'Best accuracy, non-linear, feature importances included.',go:()=>svModel('cl','gbt')}]},
+ {id:'curve',q:'Model a curved / non-linear relationship',recs:[
+   {t:'Polynomial regression',w:'Smooth curves; watch degree vs overfitting.',go:()=>svModel('nl','poly')},
+   {t:'Gradient Boosting Regressor',w:'Flexible non-linear ensemble.',go:()=>svModel('nl','gbt')}]}
+];
+let svSel=null;
+function renderSurvey(){
+  const q1=$('#sv-q1');
+  if(!S.cols.length){q1.innerHTML='<p class="text-sm" style="color:var(--fg2)">Load a dataset (or a sample above) to get tailored recommendations.</p>';$('#sv-rec').innerHTML='';return}
+  q1.innerHTML=SV.map(s=>'<button class="btn w-full text-left" data-sv="'+s.id+'">'+esc(s.q)+'</button>').join('');
+  $$('#sv-q1 [data-sv]').forEach(b=>b.onclick=()=>{svSel=b.dataset.sv;renderRecs()});
+  if(svSel)renderRecs();else $('#sv-rec').innerHTML='<p class="text-sm" style="color:var(--fg2)">Pick a goal and the recommended tools appear here, pre-configured.</p>';
+}
+function renderRecs(){
+  const s=SV.find(x=>x.id===svSel);
+  $('#sv-rec').innerHTML=s.recs.map((r,i)=>'<div class="card" style="background:var(--card2)"><h2>'+esc(r.t)+'</h2><p class="text-xs mb-2" style="color:var(--fg2)">'+esc(r.w)+'</p><button class="btn btn-pri btn-xs" data-rec="'+i+'">'+icon('play')+'Configure &amp; run</button></div>').join('');
+  $$('#sv-rec [data-rec]').forEach(b=>b.onclick=()=>{s.recs[+b.dataset.rec].go()});
+}
+function svModel(lab,model){showWS('lab');showLab(lab);const r=document.querySelector('input[name='+lab+'-model][value='+model+']');if(r){r.checked=true;r.dispatchEvent(new Event('change'))}setTimeout(()=>$('#btn-'+lab).click(),80)}
+function svTest(test){showWS('lab');showLab('tests');const d=$('#t-'+test);if(d)d.open=true;setTimeout(()=>{const b=document.querySelector('#t-'+test+' .t-run');if(b)b.click()},80)}
+function svCorr(){showWS('viz');$$('#corr-cols input').forEach(cb=>cb.checked=true);setTimeout(()=>$('#btn-corr').click(),80)}
+function svGraphCat(){showWS('viz');const cats=colsByType('cat');if(cats.length>=2){$('#g-x').value=cats[0];$('#g-y').value=cats[1];graphKinds();runGraph('stacked')}}
+</script>
+
+<script>
+function ols(xs,ys){const n=xs.length;const mx=xs.reduce((a,b)=>a+b,0)/n,my=ys.reduce((a,b)=>a+b,0)/n;let num=0,den=0;for(let i=0;i<n;i++){num+=(xs[i]-mx)*(ys[i]-my);den+=(xs[i]-mx)**2}const m=den?num/den:0;const b=my-m*mx;return{m,b,x:[Math.min(...xs),Math.max(...xs)]}}
+const ICONS={
+ bar:'<rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/>',
+ hist:'<rect x="3" y="5" width="3" height="16" rx=".5"/><rect x="7" y="10" width="3" height="11" rx=".5"/><rect x="11" y="3" width="3" height="18" rx=".5"/><rect x="15" y="8" width="3" height="13" rx=".5"/><rect x="19" y="12" width="3" height="9" rx=".5"/>',
+ scatter:'<circle cx="6" cy="8" r="1.6"/><circle cx="11" cy="5" r="1.6"/><circle cx="15" cy="10" r="1.6"/><circle cx="9" cy="14" r="1.6"/><circle cx="19" cy="6" r="1.6"/><circle cx="17" cy="16" r="1.6"/>',
+ line:'<path d="M3 17l5-5 4 3 6-8"/><circle cx="8" cy="12" r="1.3"/>',
+ box:'<path d="M4 9h16M4 17h16M8 9v8M16 9v8M12 6v3M12 17v3"/>',
+ violin:'<path d="M12 3c3 4 1 6 4 8s2 5 0 7-3 3-4 3-1-1-4-3-4-5-1-7 1-4 4-8z"/>',
+ pie:'<circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.5 6.5"/>',
+ grid:'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>',
+ play:'<path d="M7 4.5v15l13-7.5z" fill="currentColor" stroke="none"/>',
+ down:'<path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/>',
+ up:'<path d="M12 21V9m0 0l-5 5m5-5l5 5M4 3h16"/>',
+ db:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+ calc:'<path d="M5 3h14v18H5z"/><path d="M8 7h8M8 11h2M14 11h2M8 15h2M14 15h2"/>',
+ zap:'<path d="M13 2L4 14h6l-1 8 9-12h-6z"/>',
+ spark:'<path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/>'
+};
+function icon(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICONS[n]||'')+'</svg>'}
+function kindIcon(k){return{bar:'bar',hist:'hist',histfac:'hist',scatter:'scatter',line:'line',box:'box',boxfac:'box',violin:'violin',pie:'pie',grouped:'bar',stacked:'bar',heatcat:'grid'}[k]||'bar'}
+function graphKinds(){
+  const x=$('#g-x').value,y=$('#g-y').value||'',g=$('#g-g').value||'';
+  const xt=typeOf(x),yt=y?typeOf(y):null;
+  const ft=(g&&typeOf(g)==='cat')?g:(yt==='cat'?y:null);
+  const opts=[];
+  if(!x){$('#g-kinds').innerHTML='';$('#g-note').textContent='Pick a Columns (X) field.';$('#g-bins-wrap').classList.add('hidden');$('#g-agg-lbl').classList.add('hidden');return}
+  if(xt==='num'){
+    if(!y||yt==='num')opts.push(['hist','Histogram of '+x]);
+    if(yt==='num'){opts.push(['scatter','Scatter: '+y+' vs '+x]);opts.push(['box','Box: '+y]);opts.push(['violin','Violin: '+y])}
+    if(yt==='cat'){opts.push(['box','Box: '+x+' by '+y]);opts.push(['violin','Violin: '+x+' by '+y])}
+    if(ft){opts.push(['histfac','Histogram per '+ft]);opts.push(['boxfac','Box per '+ft])}
+  }else{
+    if(yt==='num'){opts.push(['bar','Bar: '+$('#g-agg').value+' of '+y+' by '+x]);opts.push(['box','Box: '+y+' by '+x]);opts.push(['violin','Violin: '+y+' by '+x])}
+    if(yt==='cat'){opts.push(['grouped','Grouped bars']);opts.push(['stacked','Stacked bars']);opts.push(['heatcat','Heatmap (counts)'])}
+    if(!y){opts.push(['bar','Bar: counts of '+x]);opts.push(['pie','Pie: share of '+x])}
+  }
+  $('#g-bins-wrap').classList.toggle('hidden',!opts.some(o=>o[0]==='hist'||o[0]==='histfac'));
+  $('#g-agg-lbl').classList.toggle('hidden',!opts.some(o=>o[0]==='bar'));
+  $('#g-note').textContent='Dimensions = categorical \u00b7 Measures = numeric. "per ..." charts render one mini-panel for each subcategory.';
+  $('#g-kinds').innerHTML=opts.map(([k,l])=>'<button class="btn btn-xs" data-kind="'+k+'">'+icon(kindIcon(k))+esc(l)+'</button>').join('');
+  $$('#g-kinds [data-kind]').forEach(b=>b.onclick=()=>runGraph(b.dataset.kind));
+}
+function runGraph(kind){
+  (async()=>{try{
+    const base=kind==='histfac'?'hist':kind==='boxfac'?'box':kind;
+    const x=$('#g-x').value;let y=$('#g-y').value||null,g=$('#g-g').value||null;
+    if(kind==='histfac'||kind==='boxfac'){g=(g&&typeOf(g)==='cat')?g:(y&&typeOf(y)==='cat'?y:null);y=null}
+    else if((base==='box'||base==='violin')&&y&&typeOf(y)==='cat'&&!g){g=y;y=null}
+    const spec={task:'graph',kind:base,x,y,group:g,agg:$('#g-agg').value,bins:+$('#g-bins').value||20};
+    if(spec.y===spec.x)spec.y=null;
+    $('#g-note').textContent='Computing...';await tick();
+    const d=await run(spec);
+    S.lastGraph={orig:kind,base,d};
+    if(kind==='histfac'||kind==='boxfac')renderFacets(d,base);else plotGraph(d);
+    $('#g-note').textContent=d.n+' rows plotted.';
+  }catch(e){$('#g-note').textContent='';toast(e.message)}})();
+}
+function renderFacets(d,kind){
+  const host=$('#g-plot');host.innerHTML='';
+  const wrap=document.createElement('div');wrap.className='grid md:grid-cols-3 gap-3';
+  host.appendChild(wrap);
+  d.series.forEach((s,i)=>{
+    const panel=document.createElement('div');panel.className='card';panel.style.background='var(--card2)';panel.style.padding='.6rem';
+    const t=document.createElement('div');t.className='text-xs font-semibold mb-1';t.style.color='var(--fg2)';t.textContent=s.name+' \u00b7 '+s.x.length+' rows';
+    const dv=document.createElement('div');dv.id='g-fac-'+i;dv.style.height='170px';
+    panel.appendChild(t);panel.appendChild(dv);wrap.appendChild(panel);
+    const c=PAL[i%PAL.length];
+    const tr=kind==='hist'?{type:'histogram',x:s.x,nbinsx:d.bins,marker:{color:c}}:{type:'box',y:s.x,marker:{color:c},line:{color:c}};
+    Plotly.newPlot(dv,[tr],lo({margin:{t:8,r:12,b:34,l:40},showlegend:false}),{responsive:true,displaylogo:false});
+  });
+}
+function rerenderChart(){
+  if(!S.lastGraph)return;
+  const L=S.lastGraph;
+  if(L.orig==='histfac'||L.orig==='boxfac')renderFacets(L.d,L.base);else plotGraph(L.d);
+}
+function plotGraph(d){
+  const tr=[];const col=i=>PAL[i%PAL.length];
+  if(d.kind==='hist')d.series.forEach((s,i)=>tr.push({type:'histogram',x:s.x,name:s.name,opacity:d.series.length>1?.72:1,nbinsx:d.bins,marker:{color:col(i)}}));
+  else if(d.kind==='box')d.series.forEach((s,i)=>tr.push({type:'box',y:s.x,name:s.name,marker:{color:col(i)},line:{color:col(i)}}));
+  else if(d.kind==='violin')d.series.forEach((s,i)=>tr.push({type:'violin',y:s.x,name:s.name,points:'outliers',line:{color:col(i)},fillcolor:col(i),opacity:.7}));
+  else if(d.kind==='scatter'){
+    d.series.forEach((s,i)=>{tr.push({type:'scatter',mode:'markers',x:s.x,y:s.y,name:s.name,marker:{color:col(i),size:5,opacity:.6}});
+      if($('#g-trend').checked&&s.x.length>1){const o=ols(s.x,s.y);tr.push({type:'scatter',mode:'lines',x:o.x,y:o.x.map(v=>o.m*v+o.b),name:'OLS ('+s.name+')',line:{color:col(i),width:2,dash:'dot'},hoverinfo:'skip'})}});
+  }
+  else if(d.kind==='bar'||d.kind==='grouped'||d.kind==='stacked')d.series.forEach((s,i)=>tr.push({type:'bar',x:s.x,y:s.y,name:s.name,marker:{color:col(i)}}));
+  else if(d.kind==='pie'){tr.push({type:'pie',labels:d.series[0].x,values:d.series[0].y,marker:{colors:d.series[0].x.map((_,i)=>PAL[i%PAL.length])},hole:.42,textinfo:'label+percent'})}
+  else if(d.kind==='heatcat')tr.push({type:'heatmap',z:d.z,x:d.xlab,y:d.ylab,colorscale:'Greys',reversescale:true,showscale:false,hovertemplate:'%{y} \u00d7 %{x}: %{z}<extra></extra>'});
+  const ly={xaxis:{title:{text:d.xname}},yaxis:{},showlegend:d.series.length>1};
+  if(d.kind==='scatter')ly.yaxis.title={text:d.yname};
+  if(d.kind==='bar')ly.yaxis.title={text:d.stat+' of '+(d.yname||'')};
+  if(d.kind==='grouped')ly.barmode='group';
+  if(d.kind==='stacked')ly.barmode='stack';
+  if(d.kind==='hist'&&d.series.length>1)ly.barmode='overlay';
+  plot('g-plot',tr,ly);
+}
+$('#btn-corr').onclick=()=>withBtn('#btn-corr',async()=>{
+  const cols=checkedVals('corr-cols');const method=$('#corr-method').value;const sig=$('#corr-sig').checked;
+  const r=await run({task:'corr',cols,method});
+  S.sheets['Correlation']=r.pairs.map(p=>({column_a:p[0],column_b:p[1],r:p[2],p_value:p[3]}));
+  const z=sig?r.matrix.map((row,i)=>row.map((v,j)=>(r.pvals[i][j]==null||r.pvals[i][j]>=.05)?null:v)):r.matrix;
+  const text=r.matrix.map((row,i)=>row.map((v,j)=>{if(i===j)return'1';const p=r.pvals[i][j];return (v==null?'':String(v))+(p!=null&&p<.05?'*':'')}));
+  plot('corr-plot',[{type:'heatmap',z,x:r.names,y:r.names,colorscale:[[0,'#fb7185'],[.5,'#18181b'],[1,'#818cf8']],zmin:-1,zmax:1,text,texttemplate:'%{text}',hovertemplate:'%{y} vs %{x}: %{text}<extra></extra>',showscale:true,colorbar:{thickness:9,tickfont:{color:'#a1a1aa'}}}],{margin:{l:96,t:16,r:20,b:96},xaxis:{tickangle:-40,gridcolor:'rgba(0,0,0,0)'},yaxis:{gridcolor:'rgba(0,0,0,0)'},plot_bgcolor:'rgba(161,161,170,.06)'});
+  $('#corr-note').textContent=(sig?'Gray cells = not significant (p \u2265 0.05); * = significant. ':'')+'n = '+r.n+' complete rows \u00b7 '+method;
+  $('#corr-pairs').innerHTML=r.pairs.length?r.pairs.map(p=>'<div class="flex justify-between gap-2 border-b" style="border-color:var(--bd);padding:.25rem 0"><span>'+esc(p[0])+' \u00b7 '+esc(p[1])+'</span><b style="color:'+(p[2]>=0?'var(--good)':'var(--bad)')+'">'+p[2]+'</b></div>').join(''):'<span class="text-xs">No finite pairs.</span>';
+});
+function warnBlock(ws){return ws&&ws.length?'<div class="badge b-bad mb-2" style="white-space:normal;max-width:100%">'+esc(ws.join(' | ').slice(0,300))+'</div>':''}
+function regBlock(r){
+  const pct=r.r2==null?'n/a':Math.round(r.r2*100);
+  let impT='';
+  if(r.importances&&r.importances.length)impT='<div class="mb-2">'+tableHTML(['Feature importance','Score'],r.importances.slice(0,10).map(x=>[esc(x[0]),fmt(x[1],4)]))+'</div>';
+  return '<h2 class="mb-1">'+esc(r.target)+' \u00b7 '+esc(r.model)+' <span class="badge b-no">'+r.kind+'</span></h2>'+warnBlock(r.warnings)+
+  statsHTML([['R\u00b2 (test)',fmt(r.r2)],['Adj R\u00b2',fmt(r.adj_r2)],['R\u00b2 (train)',fmt(r.r2_train)],['RMSE',fmt(r.rmse)],['MAE',fmt(r.mae)],['Rows',r.n]])+impT+
+  '<p class="text-xs mt-1 mb-2" style="color:var(--fg2)">'+(r.r2!=null&&r.r2>=0?('Explains \u2248'+pct+'% of held-out variance. '):(r.r2!=null?'Negative R\u00b2 \u2014 worse than predicting the mean on held-out data. ':''))+(r.scaled?'Coefficients are on standardized features. ':'')+r.k+' features \u00b7 seed '+r.seed+'.</p>';
+}
+function repTable(rep){
+  const rows=[];
+  for(const[k,v]of Object.entries(rep||{})){
+    if(k==='accuracy'||typeof v!=='object'||v==null)continue;
+    rows.push(['<b>'+esc(k)+'</b>',fmt(v.precision),fmt(v.recall),fmt(v['f1-score']),v.support]);
+  }
+  return tableHTML(['Class','Precision','Recall','F1','Support'],rows);
+}
+function clfBlock(r){
+  return '<h2 class="mb-1">'+esc(r.target)+' \u00b7 '+esc(r.model)+' <span class="badge b-no">classification</span></h2>'+warnBlock(r.warnings)+
+  statsHTML([['Accuracy (test)',fmt(r.accuracy)],['Accuracy (train)',fmt(r.train_accuracy)],['ROC-AUC',r.auc==null?'n/a':fmt(r.auc)],['Classes',r.classes],['Rows',r.n]])+
+  '<div class="mb-2">'+repTable(r.report)+'</div>';
+}
+function coefTraces(r){
+  const cs=r.coefs;if(!cs||!cs.length)return[];
+  const top=cs.slice(0,25);
+  return [{type:'bar',x:top.map(c=>c[1]),y:top.map(c=>c[0]),orientation:'h',marker:{color:top.map(c=>c[1]>=0?'#818cf8':'#fb7185')}}];
+}
+function impTraces(r){
+  const imp=r.importances;
+  if(imp&&imp.length){const t=imp.slice(0,25);return[{type:'bar',x:t.map(c=>c[1]),y:t.map(c=>c[0]),orientation:'h',marker:{color:PAL[0]}}]}
+  return coefTraces(r);
+}
+$('#btn-lin').onclick=()=>withBtn('#btn-lin',async()=>{
+  const r=await run({task:'model',model:document.querySelector('input[name=lin-model]:checked').value,target:$('#lin-target').value,features:checkedVals('lin-feats'),alpha:+$('#lin-alpha').value,l1_ratio:+$('#lin-l1').value,test_size:+$('#lin-ts').value,seed:+$('#lin-seed').value||42,scale:$('#lin-scale').checked});
+  S.sheets['Linear Model']=[{metric:'R2 (test)',value:r.r2},{metric:'Adj R2',value:r.adj_r2},{metric:'R2 (train)',value:r.r2_train},{metric:'RMSE',value:r.rmse},{metric:'MAE',value:r.mae},{metric:'Rows',value:r.n},{metric:'Features',value:r.k},{metric:'Target',value:r.target},{metric:'Model',value:r.model},{metric:'Seed',value:r.seed}].concat((r.coefs||[]).map(c=>({feature:c[0],coefficient:c[1]})));
+  $('#lin-out').innerHTML=regBlock(r);
+  plot('lin-coef',coefTraces(r),{xaxis:{title:'coefficient'},margin:{l:110}});
+  const lo=Math.min(...r.avp.x,...r.avp.y),hi=Math.max(...r.avp.x,...r.avp.y);
+  plot('lin-avp',[{type:'scatter',mode:'markers',x:r.avp.x,y:r.avp.y,name:'predictions',marker:{color:PAL[0],size:5,opacity:.65}},{type:'scatter',mode:'lines',x:[lo,hi],y:[lo,hi],name:'ideal',line:{color:'#fb7185',dash:'dot'},hoverinfo:'skip'}],{xaxis:{title:'actual'},yaxis:{title:'predicted'},showlegend:true});
+  const rl=Math.min(...r.resid.x),rh=Math.max(...r.resid.x);
+  plot('lin-res',[{type:'scatter',mode:'markers',x:r.resid.x,y:r.resid.y,marker:{color:'#a1a1aa',size:5,opacity:.65}},{type:'scatter',mode:'lines',x:[rl,rh],y:[0,0],line:{color:'#fb7185',dash:'dot'},hoverinfo:'skip'}],{xaxis:{title:'predicted'},yaxis:{title:'residual'}});
+});
+$('#btn-cl').onclick=()=>withBtn('#btn-cl',async()=>{
+  const md=$('#cl-unlim').checked?null:+$('#cl-depth').value;
+  const r=await run({task:'model',model:document.querySelector('input[name=cl-model]:checked').value,target:$('#cl-target').value,features:checkedVals('cl-feats'),C:+$('#cl-C').value||1,max_depth:md,n_estimators:+$('#cl-nest').value,learning_rate:+$('#cl-lr').value,test_size:+$('#cl-ts').value,seed:+$('#cl-seed').value||42,scale:$('#cl-scale').checked});
+  const repRows=Object.entries(r.report||{}).filter(([k,v])=>v&&typeof v==='object').map(([k,v])=>({class:k,precision:v.precision,recall:v.recall,f1:v['f1-score'],support:v.support}));
+  S.sheets['Classification']=[{metric:'Accuracy (test)',value:r.accuracy},{metric:'Accuracy (train)',value:r.train_accuracy},{metric:'ROC-AUC',value:r.auc},{metric:'Classes',value:r.classes},{metric:'Rows',value:r.n},{metric:'Target',value:r.target},{metric:'Model',value:r.model}].concat(repRows,(r.importances||r.coefs||[]).map(x=>({feature:x[0],score:x[1]})));
+  $('#cl-out').innerHTML=clfBlock(r);
+  plot('cl-cm',[{type:'heatmap',z:r.cm,x:r.labels,y:r.labels,colorscale:[[0,'rgba(129,140,248,.05)'],[1,'#6366f1']],showscale:false,hovertemplate:'actual %{y} \u00b7 predicted %{x}: %{z}<extra></extra>'}],{xaxis:{title:'predicted',gridcolor:'rgba(0,0,0,0)'},yaxis:{title:'actual',gridcolor:'rgba(0,0,0,0)'},margin:{l:84},plot_bgcolor:'rgba(161,161,170,.06)'});
+  plot('cl-imp',impTraces(r),{margin:{l:110}});
+  const rw=$('#cl-rules-wrap');const rtxt=r.rules||(r.gbt_tree?'How boosting works \u2014 first weak learner:\n\n'+r.gbt_tree:null);if(rtxt){rw.classList.remove('hidden');$('#cl-rules').textContent=rtxt}else rw.classList.add('hidden');
+});
+$('#btn-nl').onclick=()=>withBtn('#btn-nl',async()=>{
+  const md=$('#nl-unlim').checked?null:+$('#nl-depth').value;
+  const r=await run({task:'model',model:document.querySelector('input[name=nl-model]:checked').value,target:$('#nl-target').value,features:checkedVals('nl-feats'),degree:+$('#nl-degree').value,max_depth:md,n_estimators:+$('#nl-nest').value,learning_rate:+$('#nl-lr').value,test_size:+$('#nl-ts').value,seed:+$('#nl-seed').value||42,scale:false});
+  S.sheets['Non-linear Model']=[{metric:'R2 (test)',value:r.r2},{metric:'Adj R2',value:r.adj_r2},{metric:'R2 (train)',value:r.r2_train},{metric:'RMSE',value:r.rmse},{metric:'MAE',value:r.mae},{metric:'Rows',value:r.n},{metric:'Features',value:r.k},{metric:'Target',value:r.target},{metric:'Model',value:r.model},{metric:'Degree',value:r.degree||''}].concat((r.coefs||r.importances||[]).map(c=>({feature:c[0],value:c[1]})));
+  $('#nl-out').innerHTML=regBlock(r)+((r.rules||r.gbt_tree)?'<div class="mt-2"><h2>'+(r.rules?'Decision tree rules':'How boosting works \u2014 first weak learner')+'</h2><pre class="rules">'+esc(r.rules||r.gbt_tree)+'</pre></div>':'');
+  if(r.curve&&r.feat_name){$('#nl-curve-wrap').classList.remove('hidden');
+    plot('nl-curve',[{type:'scatter',mode:'markers',x:r.avp.x,y:r.avp.y,name:'data (test)',marker:{color:'#a1a1aa',size:5,opacity:.55}},{type:'scatter',mode:'lines',x:r.curve.x,y:r.curve.y,name:'fitted model',line:{color:PAL[0],width:2.5}}],{xaxis:{title:r.feat_name},yaxis:{title:r.target},showlegend:true});
+  }else $('#nl-curve-wrap').classList.add('hidden');
+  const rl=Math.min(...r.resid.x),rh=Math.max(...r.resid.x);
+  plot('nl-res',[{type:'scatter',mode:'markers',x:r.resid.x,y:r.resid.y,marker:{color:'#a1a1aa',size:5,opacity:.65}},{type:'scatter',mode:'lines',x:[rl,rh],y:[0,0],line:{color:'#fb7185',dash:'dot'},hoverinfo:'skip'}],{xaxis:{title:'predicted'},yaxis:{title:'residual'}});
+});
+function verdictHTML(p){
+  return p==null?'<span class="badge b-no">p unavailable</span>':(p<0.05?'<span class="badge b-ok">Statistically significant at \u03b1 = 0.05 \u2014 reject H\u2080</span>':'<span class="badge b-no">Not significant at \u03b1 = 0.05 \u2014 fail to reject H\u2080</span>');
+}
+function testBlock(t,r){
+  let s='<div class="flex flex-wrap items-center gap-2 mb-2">'+verdictHTML(r.p)+'<span class="text-xs">p = '+pfmt(r.p)+'</span>'+(r.stat!=null?'<span class="text-xs">statistic = '+fmt(r.stat,4)+'</span>':'')+(r.dof!=null?'<span class="text-xs">df = '+r.dof+'</span>':'')+(r.ci?'<span class="text-xs">95% CI: ['+fmt(r.ci[0],3)+', '+fmt(r.ci[1],3)+']</span>':'')+(r.eff!=null?'<span class="text-xs">'+esc(r.eff_name)+' = '+fmt(r.eff,3)+'</span>':'')+'</div><p class="text-xs mb-2" style="color:var(--fg)">'+esc(r.text||'')+'</p>';
+  if(t==='ttest1')s+=statsHTML([['n',r.n],['mean',fmt(r.mean)],['sd',fmt(r.sd)]]);
+  if(t==='ttest2')s+=statsHTML([[esc(r.gA)+' mean',fmt(r.m1)],[esc(r.gB)+' mean',fmt(r.m2)],[esc(r.gA)+' n',r.n1],[esc(r.gB)+' n',r.n2]])+tableHTML(['Group','n','mean','sd'],[[esc(r.gA),r.n1,fmt(r.m1),fmt(r.sd1)],[esc(r.gB),r.n2,fmt(r.m2),fmt(r.sd2)]]);
+  if(t==='ttestp')s+=statsHTML([['n pairs',r.n],['mean A',fmt(r.m1)],['mean B',fmt(r.m2)],['mean diff',fmt(r.md)]]);
+  if(t==='mwu')s+=statsHTML([['median '+esc(r.gA),fmt(r.m1)],['median '+esc(r.gB),fmt(r.m2)],[esc(r.gA)+' n',r.n1],[esc(r.gB)+' n',r.n2]]);
+  if(t==='anova'||t==='kw'){
+    const gs=r.groups||[];
+    const head=['Group','n'].concat(t==='anova'?['mean','sd','median']:['median','mean']);
+    s+=tableHTML(head,gs.map(g=>['<b>'+esc(g.name)+'</b>',g.n].concat(t==='anova'?[fmt(g.mean),fmt(g.sd),fmt(g.median)]:[fmt(g.median),fmt(g.mean)])));
+  }
+  if(t==='chi2'){
+    s+='<div class="grid md:grid-cols-2 gap-2 mt-2"><div><b class="text-xs">Observed counts</b>'+tableHTML([''].concat(r.cols.map(esc)),r.rows.map((rw,i)=>['<b>'+esc(rw)+'</b>'].concat(r.observed[i].map(v=>String(v)))))+'</div><div><b class="text-xs">Expected under independence</b>'+tableHTML([''].concat(r.cols.map(esc)),r.rows.map((rw,i)=>['<b>'+esc(rw)+'</b>'].concat(r.expected[i].map(v=>fmt(v,1)))))+'</div></div>';
+    if(r.low_exp)s+='<div class="badge b-bad mt-2" style="white-space:normal;max-width:100%">Some expected counts &lt; 5 \u2014 chi-square approximation may be invalid. Consider grouping rare categories.</div>';
+  }
+  return s;
+}
+$$('.t-run').forEach(b=>b.onclick=async()=>{
+  const t=b.dataset.test;const out=b.closest('details').querySelector('.t-out');
+  try{out.innerHTML='<p style="color:var(--fg2)">Running...</p>';await tick();
+    const spec={task:'test',test:t};
+    if(t==='ttest1'){spec.col=$('#t1-col').value;spec.mu=+$('#t1-mu').value||0}
+    if(t==='ttest2'){spec.col=$('#t2-col').value;spec.grp=$('#t2-grp').value;spec.gA=$('#t2-ga').value;spec.gB=$('#t2-gb').value;spec.equal_var=$('#t2-eq').checked}
+    if(t==='ttestp'){spec.col=$('#tp-a').value;spec.colB=$('#tp-b').value}
+    if(t==='anova'){spec.col=$('#av-col').value;spec.grp=$('#av-grp').value}
+    if(t==='chi2'){spec.col=$('#x-a').value;spec.colB=$('#x-b').value}
+    if(t==='mwu'){spec.col=$('#m-a').value;spec.grp=$('#m-grp').value;spec.gA=$('#m-ga').value;spec.gB=$('#m-gb').value}
+    if(t==='kw'){spec.col=$('#k-col').value;spec.grp=$('#k-grp').value}
+    const r=await run(spec);
+    S.sheets['Hypothesis Test']=[{test:t,statistic:r.stat,p_value:r.p,ci_low:r.ci?r.ci[0]:null,ci_high:r.ci?r.ci[1]:null,effect:r.eff,effect_name:r.eff_name,significant:r.p!=null?String(r.p<0.05):'n/a'}];
+    out.innerHTML=testBlock(t,r);
+  }catch(e){out.innerHTML='<div class="badge b-bad" style="white-space:normal;max-width:100%">'+esc(e.message)+'</div>'}
+});
+let sentPipe=null,sentModelId='';
+function sentStatus(t){const e=$('#sent-status');if(e)e.textContent=t}
+async function ensureSent(modelId){
+  if(sentPipe&&sentModelId===modelId)return sentPipe;
+  sentStatus('Loading model (downloads once, then cached)...');
+  let mod;
+  try{
+    const r=await fetch(TRANSFORMERS_URL);
+    if(!r.ok)throw 0;
+    const src=await r.text();
+    mod=await import(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
+    if(!mod.pipeline)throw 0;
+  }catch(e){mod=await import(TRANSFORMERS_ENTRY)}
+  try{
+    if(mod.env){mod.env.allowLocalModels=false;if(mod.env.backends&&mod.env.backends.onnx&&mod.env.backends.onnx.wasm){mod.env.backends.onnx.wasm.numThreads=1}}
+    sentPipe=await mod.pipeline('sentiment-analysis',modelId,{quantized:true});
+    sentModelId=modelId;return sentPipe;
+  }catch(e){
+    sentStatus('');
+    throw new Error('Model failed to load: '+(e&&e.message?e.message:e)+' \u2014 check the connection once; it caches afterwards.');
+  }
+}
+$('#btn-sent').onclick=()=>withBtn('#btn-sent',async()=>{
+  const col=$('#sent-col').value;
+  const cap=Math.max(1,Math.min(100,+$('#sent-rows').value||100));
+  const bs=Math.max(1,Math.min(32,+$('#sent-batch').value||8));
+  const modelId=$('#sent-model').value;
+  if(!col)throw new Error('Pick a text column.');
+  if(!S.cols.length)throw new Error('Load a dataset first.');
+  const cv=JSON.parse(colValPy(col,cap,42));
+  if(!cv.ok)throw new Error(cv.error);
+  const rows=cv.rows;if(!rows.length)throw new Error('No non-empty rows.');
+  $('#sent-barwrap').classList.remove('hidden');$('#sent-bar').style.width='0%';
+  const pipe=await ensureSent(modelId);
+  const texts=rows.map(r=>String(r[1]).slice(0,1000));
+  const out=[];const nB=Math.ceil(texts.length/bs);
+  for(let b=0;b<nB;b++){
+    const chunk=texts.slice(b*bs,(b+1)*bs);
+    const res=await pipe(chunk);
+    (Array.isArray(res)?res:[res]).forEach(x=>out.push({label:String(x.label),score:x.score}));
+    const done=Math.min((b+1)*bs,texts.length);
+    $('#sent-bar').style.width=(done/texts.length*100)+'%';
+    sentStatus('Scored '+done+' / '+texts.length+' rows (batch '+(b+1)+' of '+nB+')');
+    await tick();
+  }
+  const info=JSON.parse(addSentPy(JSON.stringify(rows.map((r,i)=>[r[0],out[i].label,out[i].score]))));
+  if(!info.ok)throw new Error(info.error);
+  applyData(info);
+  const counts={};out.forEach(o=>{const k=o.label.toLowerCase();counts[k]=(counts[k]||0)+1});
+  const cc=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const labClass=k=>k.includes('pos')?'b-ok':k.includes('neg')?'b-bad':'b-no';
+  $('#sent-out').innerHTML='<h2 class="mb-2">Results \u00b7 '+esc(modelId.split('/')[1])+'</h2>'+
+    statsHTML([['Rows scored',out.length]].concat(cc.map(([k,v])=>[esc(k),v])))+
+    '<p class="text-xs mb-2" style="color:var(--fg2)">Wrote <span class="mono">sentiment_label</span> + <span class="mono">sentiment_score</span> into df_master \u2014 now usable in Graphs, Correlation, Models and Tests.</p>'+
+    tableHTML(['Text','Label','Score'],rows.map((r,i)=>[esc(String(r[1]).slice(0,160)),'<span class="badge '+labClass(out[i].label.toLowerCase())+'">'+esc(out[i].label)+'</span>',fmt(out[i].score,4)]));
+  plot('sent-plot',[{type:'bar',x:cc.map(c=>c[0]),y:cc.map(c=>c[1]),marker:{color:cc.map(c=>labClass(c[0]).includes('ok')?'#34d399':labClass(c[0]).includes('bad')?'#fb7185':'#a1a1aa')}}],{xaxis:{title:'label'},yaxis:{title:'rows'},margin:{l:44}});
+  toast('Sentiment scored '+out.length+' rows and merged into the dataset.','ok');
+});
+</script>
+
+<script>
+const WF_N={
+ input:{t:'Input Data',ins:[],outs:[['out','data']]},
+ filter:{t:'Filter / Query',ins:[['in','data']],outs:[['out','data']]},
+ transform:{t:'Transform',ins:[['in','data']],outs:[['out','data']]},
+ split:{t:'Split Data',ins:[['in','data']],outs:[['train','train'],['test','test']]},
+ model:{t:'ML Model',ins:[['train','train'],['test','test']],outs:[['model','model'],['scored','scored']]},
+ evaluate:{t:'Evaluate',ins:[['in','any']],outs:[]}
+};
+const NODE_W=210,PORT_GAP=24,PORT_TOP=34;
+let WF={nodes:[],edges:[],seq:1,sel:null,pending:null,pan:{x:40,y:30},zoom:1};
+function wfNode(id){return WF.nodes.find(n=>n.id===id)}
+function wfDefaults(t){return{input:{source:'main'},filter:{col:'',op:'==',value:''},transform:{calc_name:'',calc_expr:'',dropna_cols:[],onehot_cols:[],scale_cols:[]},split:{test_size:0.2,seed:42,stratify:false,strat_col:''},model:{algo:'ridge',target:'',alpha:1,l1_ratio:0.5,C:1,max_depth:3,n_estimators:100,learning_rate:0.1,degree:2,seed:42},evaluate:{}}[t]||{}}
+function wfLoad(){try{const s=localStorage.getItem('capyml-flow');if(s){const o=JSON.parse(s);WF.nodes=(o.nodes||[]).map(n=>({...n,params:n.params||{}}));WF.edges=o.edges||[];WF.seq=o.seq||1;WF.pan=o.pan||WF.pan;WF.zoom=o.zoom||1;}}catch(e){}wfView();wfRenderAll()}
+function wfSave(){try{localStorage.setItem('capyml-flow',JSON.stringify({nodes:WF.nodes.map(n=>({id:n.id,type:n.type,x:n.x,y:n.y,params:n.params})),edges:WF.edges,seq:WF.seq,pan:WF.pan,zoom:WF.zoom}))}catch(e){}}
+function wfView(){$('#wf-view').style.transform='translate('+WF.pan.x+'px,'+WF.pan.y+'px) scale('+WF.zoom+')'}
+function wfAdd(type,wx,wy){
+  const n={id:'n'+(WF.seq++),type,x:Math.max(6,Math.round(wx!=null?wx:80+((WF.seq*37)%260))),y:Math.max(6,Math.round(wy!=null?wy:60+((WF.seq*53)%220))),params:wfDefaults(type),status:null,report:null};
+  WF.nodes.push(n);wfSave();wfRenderAll();wfSelect(n.id);
+}
+function nodeCols(n){
+  for(const e of WF.edges.filter(e=>e.to===n.id)){
+    const u=wfNode(e.from);
+    if(u&&u.report&&u.report.ports){const p=u.report.ports[e.fp];if(p&&p.cols)return p.cols.map(String)}
+  }
+  return colsByType();
+}
+function wfSummary(n){
+  const p=n.params||{};
+  switch(n.type){
+    case 'input':return p.source==='main'?'main dataset':('sample: '+p.source);
+    case 'filter':return (p.col||'?')+' '+(p.op||'==')+' '+(p.value==null?'':p.value);
+    case 'transform':{const a=[];if(p.calc_name)a.push('calc '+p.calc_name);if((p.dropna_cols||[]).length)a.push('dropna '+p.dropna_cols.length);if((p.onehot_cols||[]).length)a.push('onehot '+p.onehot_cols.length);if((p.scale_cols||[]).length)a.push('scale '+p.scale_cols.length);return a.length?a.join(' \u00b7 '):'no actions yet'}
+    case 'split':return 'test '+Math.round((p.test_size||.2)*100)+'%'+(p.stratify?' \u00b7 stratified':'');
+    case 'model':return (p.algo||'?')+' \u2192 '+(p.target||'pick target');
+    case 'evaluate':return 'sink \u00b7 metrics & preview';
+  }
+  return '';
+}
+function wfEdgesDraw(){
+  const svg=$('#wf-svg');let h='';
+  WF.edges.forEach((e,i)=>{
+    const a=wfNode(e.from),b=wfNode(e.to);if(!a||!b)return;
+    const oi=WF_N[a.type].outs.findIndex(o=>o[0]===e.fp);
+    const ii=WF_N[b.type].ins.findIndex(o=>o[0]===e.tp);
+    if(oi<0||ii<0)return;
+    const x1=a.x+NODE_W,y1=a.y+PORT_TOP+oi*PORT_GAP,x2=b.x,y2=b.y+PORT_TOP+ii*PORT_GAP;
+    const d='M'+x1+','+y1+' C'+(x1+70)+','+y1+' '+(x2-70)+','+y2+' '+x2+','+y2;
+    const cls=e.fp==='model'?'m':e.fp==='train'?'tr':e.fp==='test'?'te':e.fp==='scored'?'sc':'';
+    h+='<path class="wf-edge '+cls+'" d="'+d+'"/><path class="wf-edge-hit" data-i="'+i+'" d="'+d+'"/>';
+  });
+  svg.innerHTML=h;
+}
+function wfBadge(n){
+  if(!n.status)return '';
+  if(n.status==='error')return '<span class="wf-badge err">error</span>';
+  let txt='';
+  const ex=(n.report&&n.report.extra)||{};
+  if(n.type==='model'){const m=ex.test_metric||ex.metric;txt=m?(m.name+' '+fmt(m.value,2)):'ok'}
+  else if(n.report&&n.report.ports){const k=Object.keys(n.report.ports)[0];const p=n.report.ports[k];if(p&&p.rows!=null)txt=p.rows+' rows'}
+  return '<span class="wf-badge">'+(txt||'ok')+'</span>';
+}
+function wfRenderAll(){
+  $$('#wf-view .wf-node').forEach(el=>el.remove());
+  for(const n of WF.nodes){
+    const def=WF_N[n.type];const el=document.createElement('div');
+    el.className='wf-node'+(WF.sel===n.id?' sel':'');el.id='wn-'+n.id;
+    el.style.left=n.x+'px';el.style.top=n.y+'px';
+    let ports='';
+    def.ins.forEach((p,i)=>{ports+='<div class="wf-port wf-in" data-to="'+n.id+'" data-tp="'+p[0]+'" style="top:'+(PORT_TOP-6.5+i*PORT_GAP)+'px" title="input: '+p[0]+' (accepts '+p[1]+')"></div>'});
+    def.outs.forEach((p,i)=>{ports+='<div class="wf-port wf-out" data-from="'+n.id+'" data-fp="'+p[0]+'" style="top:'+(PORT_TOP-6.5+i*PORT_GAP)+'px" title="output: '+p[0]+' ('+p[1]+')"></div>'});
+    el.innerHTML='<div class="wf-hd" data-drag="'+n.id+'"><span>'+def.t+'</span><button class="wf-x" data-del="'+n.id+'">\u00d7</button></div><div class="wf-body">'+esc(wfSummary(n))+'</div><span class="wf-dot '+(n.status||'')+'"></span>'+ports+wfBadge(n);
+    $('#wf-view').appendChild(el);
+  }
+  wfEdgesDraw();wfDrawer();
+}
+function wfSelect(id){WF.sel=id;$$('.wf-node').forEach(el=>el.classList.toggle('sel',el.id==='wn-'+id));wfDrawer()}
+function wfAccepts(inDef,outType){const a=inDef[1];return a==='any'||a===outType||(a==='data'&&outType!=='model')}
+function opt(cols,cur){return (cols||[]).map(c=>'<option'+(c===cur?' selected':'')+'>'+esc(c)+'</option>').join('')}
+function colChecks(pname,cols,cur){const s=new Set(cur||[]);return (cols||[]).map(c=>'<label class="flex items-center gap-1 text-xs" style="padding:.1rem 0"><input type="checkbox" data-p="'+pname+'" value="'+esc(c)+'"'+(s.has(c)?' checked':'')+'> '+esc(c)+'</label>').join('')}
+function F(l,inner){return '<div><label class="lbl">'+l+'</label>'+inner+'</div>'}
+function wfForm(n){
+  const p=n.params;const cols=nodeCols(n);
+  switch(n.type){
+    case 'input':return F('Source','<select class="inp" data-p="source"><option value="main"'+(p.source==='main'?' selected':'')+'>main dataset (Data workspace)</option><option value="housing"'+(p.source==='housing'?' selected':'')+'>sample: Housing</option><option value="churn"'+(p.source==='churn'?' selected':'')+'>sample: Churn</option><option value="abtest"'+(p.source==='abtest'?' selected':'')+'>sample: A/B Campaign</option><option value="reviews"'+(p.source==='reviews'?' selected':'')+'>sample: Customer Reviews</option></select>');
+    case 'filter':return F('Column','<select class="inp" data-p="col">'+opt(cols,p.col)+'</select>')+
+      F('Operator','<select class="inp" data-p="op">'+['==','!=','>','<','>=','<=','contains'].map(o=>'<option'+(o===p.op?' selected':'')+'>'+o+'</option>').join('')+'</select>')+
+      F('Value','<input class="inp mono" data-p="value" value="'+esc(p.value==null?'':p.value)+'">');
+    case 'transform':return F('Calculated column name','<input class="inp" data-p="calc_name" value="'+esc(p.calc_name||'')+'">')+
+      F('Expression (pandas eval, e.g. monthly_charges*12)','<input class="inp mono" data-p="calc_expr" value="'+esc(p.calc_expr||'')+'">')+
+      F('Drop missing in','<div style="max-height:88px;overflow:auto">'+colChecks('dropna_cols',cols,p.dropna_cols)+'</div>')+
+      F('One-hot encode (drop first)','<div style="max-height:88px;overflow:auto">'+colChecks('onehot_cols',cols,p.onehot_cols)+'</div>')+
+      F('StandardScale','<div style="max-height:88px;overflow:auto">'+colChecks('scale_cols',cols,p.scale_cols)+'</div>');
+    case 'split':return F('Test size (0.1\u20130.5)','<input type="number" step="0.05" min="0.1" max="0.5" class="inp" data-p="test_size" value="'+(p.test_size||.2)+'">')+
+      F('Seed','<input type="number" class="inp" data-p="seed" value="'+(p.seed||42)+'">')+
+      F('Stratify by (optional)','<select class="inp" data-p="strat_col">'+opt(cols,p.strat_col)+'</select>')+
+      '<label class="flex items-center gap-1 text-xs mt-1"><input type="checkbox" data-p="stratify"'+(p.stratify?' checked':'')+'> use stratified split</label>';
+    case 'model':return F('Algorithm','<select class="inp" data-p="algo">'+[['ols','OLS'],['ridge','Ridge'],['lasso','LASSO'],['enet','ElasticNet'],['logreg','Logistic'],['dt','Decision Tree'],['gbt','Grad Boosting'],['poly','Polynomial']].map(([v,l])=>'<option value="'+v+'"'+(v===p.algo?' selected':'')+'>'+l+'</option>').join('')+'</select>')+
+      F('Target','<select class="inp" data-p="target">'+opt(cols,p.target)+'</select>')+
+      '<div class="grid grid-cols-2 gap-2">'+
+      F('alpha','<input type="number" step="any" class="inp" data-p="alpha" value="'+(p.alpha==null?1:p.alpha)+'">')+
+      F('C','<input type="number" step="any" class="inp" data-p="C" value="'+(p.C==null?1:p.C)+'">')+
+      F('max_depth','<input type="number" class="inp" data-p="max_depth" value="'+(p.max_depth==null?3:p.max_depth)+'">')+
+      F('n_estimators','<input type="number" class="inp" data-p="n_estimators" value="'+(p.n_estimators==null?100:p.n_estimators)+'">')+
+      F('learning_rate','<input type="number" step="any" class="inp" data-p="learning_rate" value="'+(p.learning_rate==null?.1:p.learning_rate)+'">')+
+      F('degree','<input type="number" class="inp" data-p="degree" value="'+(p.degree==null?2:p.degree)+'">')+
+      F('seed','<input type="number" class="inp" data-p="seed" value="'+(p.seed==null?42:p.seed)+'">')+
+      '</div>';
+    case 'evaluate':return '<p class="text-xs" style="color:var(--fg2)">Accepts scored data, any DataFrame, or a trained model. Metrics appear here after Run pipeline.</p>';
+  }
+  return '';
+}
+function previewTable(pv){
+  const cols=pv.cols||[];
+  return tableHTML(cols,(pv.preview||[]).map(row=>cols.map(c=>{const v=row[c];return v==null?'<span style="opacity:.4">null</span>':esc(v)})));
+}
+function cmTableHTML(labels,cm){
+  const mx=Math.max(1,...cm.flat());
+  return '<h2>Confusion (actual \u00d7 predicted)</h2><div class="overflow-auto" style="max-height:240px"><table class="t"><tr><th>actual \u2193 / pred \u2192</th>'+labels.map(l=>'<th>'+esc(l)+'</th>').join('')+'</tr>'+cm.map((row,i)=>'<tr><th>'+esc(labels[i])+'</th>'+row.map(v=>'<td style="background:rgba(129,140,248,'+(v/mx*.8).toFixed(2)+')">'+v+'</td>').join('')+'</tr>').join('')+'</table></div>';
+}
+function wfReportHTML(n){
+  if(!n.status)return '<p class="text-xs" style="color:var(--fg2)">Not run yet \u2014 press Run pipeline.</p>';
+  if(n.status==='error')return '<div class="badge b-bad" style="white-space:normal;max-width:100%">'+esc(n.error||'failed')+'</div>';
+  const rep=n.report||{};const ex=rep.extra||{};let h='';
+  if(ex.metric)h+=statsHTML([[ex.metric.name,fmt(ex.metric.value)]].concat(ex.test_metric?[[ex.test_metric.name,fmt(ex.test_metric.value)]]:[]));
+  if(ex.eval){const ev=ex.eval;if(ev.note)h+='<p class="text-xs mb-2" style="color:var(--fg2)">'+ev.note+'</p>';else h+=statsHTML([[ev.name,fmt(ev.value)],['rows',ev.rows]])}
+  if(ex.model_summary){const ms=ex.model_summary;h+='<p class="text-xs mb-1" style="color:var(--fg2)">'+esc(ms.algo+' \u2192 '+ms.target+' \u00b7 '+ms.k+' features \u00b7 '+ms.n+' rows')+(ms.metric?' \u00b7 '+esc(ms.metric.name)+' '+fmt(ms.metric.value):'')+'</p>'+(ms.importances?wfKVHTML(ms.importances):ms.coefs?wfKVHTML(ms.coefs):'');if(ms.rules)h+='<pre class="rules" style="max-height:180px">'+esc(ms.rules)+'</pre>'}
+  if(ex.cm&&ex.labels)h+=cmTableHTML(ex.labels,ex.cm);
+  for(const[pn,pv]of Object.entries(rep.ports||{})){
+    if(pv.type==='model')continue;
+    h+='<h2 class="mt-2 mb-1">'+pn+' \u00b7 '+pv.rows+' rows \u00d7 '+pv.cols.length+' cols</h2>'+previewTable(pv);
+  }
+  if((ex.warnings||[]).length)h+='<div class="badge b-bad mt-2" style="white-space:normal;max-width:100%">'+esc(ex.warnings.join(' | ').slice(0,300))+'</div>';
+  if(ex.scored_on)h+='<p class="text-xs mt-1" style="color:var(--fg2)">Scored on: '+esc(ex.scored_on)+'</p>';
+  return h;
+}
+function wfKVHTML(list){
+  const t=(list||[]).slice(0,15);
+  if(!t.length)return '';
+  return tableHTML(['Feature','Value'],t.map(x=>[esc(x[0]),fmt(x[1],4)]));
+}
+function wfDrawer(){
+  const n=WF.sel?wfNode(WF.sel):null;const box=$('#wf-drawer-body');
+  if(!n){box.innerHTML='Select a node to edit its parameters and inspect its output at that exact pipeline step.';return}
+  box.innerHTML='<div class="flex items-center gap-2 mb-3 flex-wrap"><b>'+WF_N[n.type].t+'</b><span class="mono text-xs" style="color:var(--fg2)">'+n.id+'</span><span class="wf-dot '+(n.status||'')+'"></span><span class="text-xs" style="color:var(--fg2)">'+esc(wfSummary(n))+'</span><button class="btn btn-xs ml-auto" data-del="'+n.id+'">Delete node</button></div><div class="grid md:grid-cols-2 gap-4"><div id="wf-form">'+wfForm(n)+'</div><div id="wf-res">'+wfReportHTML(n)+'</div></div>';
+  $$('#wf-form [data-p]').forEach(el=>{
+    el.addEventListener('change',()=>{
+      const k=el.dataset.p;
+      if(el.type==='checkbox'){
+        if(k==='stratify'){n.params.stratify=el.checked}
+        else{const arr=$$('#wf-form [data-p="'+k+'"]:checked').map(x=>x.value);n.params[k]=arr}
+      }
+      else if(el.type==='number'){n.params[k]=+el.value}
+      else{n.params[k]=el.value}
+      wfSave();
+      const body=$('#wn-'+n.id+' .wf-body');if(body)body.innerHTML=esc(wfSummary(n));
+    });
+  });
+  $$('#wf-drawer-body [data-del]').forEach(b=>b.onclick=()=>{
+    WF.nodes=WF.nodes.filter(x=>x.id!==b.dataset.del);
+    WF.edges=WF.edges.filter(x=>x.from!==b.dataset.del&&x.to!==b.dataset.del);
+    if(WF.sel===b.dataset.del)WF.sel=null;
+    wfSave();wfRenderAll();
+  });
+}
+$('#wf-canvas').addEventListener('click',e=>{
+  const out=e.target.closest('.wf-out');
+  const inn=e.target.closest('.wf-in');
+  const hit=e.target.closest('.wf-edge-hit');
+  const del=e.target.closest('[data-del]');
+  const hd=e.target.closest('.wf-node');
+  if(out){
+    const def=WF_N[wfNode(out.dataset.from).type];
+    WF.pending={from:out.dataset.from,fp:out.dataset.fp,type:def.outs.find(o=>o[0]===out.dataset.fp)[1]};
+    $$('.wf-in').forEach(p=>{
+      const idef=WF_N[wfNode(p.dataset.to).type].ins.find(i=>i[0]===p.dataset.tp);
+      p.classList.toggle('wf-armed',wfAccepts(idef,WF.pending.type));
+    });
+    return;
+  }
+  if(inn){
+    if(WF.pending){
+      const idef=WF_N[wfNode(inn.dataset.to).type].ins.find(i=>i[0]===inn.dataset.tp);
+      if(!wfAccepts(idef,WF.pending.type)){toast('Type mismatch: '+WF.pending.type+' output cannot feed a '+idef[1]+' input.');}
+      else if(WF.pending.from===inn.dataset.to){toast('Cannot connect a node to itself.');}
+      else{
+        WF.edges=WF.edges.filter(x=>!(x.to===inn.dataset.to&&x.tp===inn.dataset.tp));
+        WF.edges.push({from:WF.pending.from,fp:WF.pending.fp,to:inn.dataset.to,tp:inn.dataset.tp});
+        wfSave();
+      }
+    }
+    WF.pending=null;$$('.wf-in').forEach(p=>p.classList.remove('wf-armed'));
+    wfRenderAll();return;
+  }
+  if(hit){WF.edges.splice(+hit.dataset.i,1);wfSave();wfRenderAll();toast('Connection removed.','ok');return}
+  if(del)return;
+  if(hd){wfSelect(hd.id.slice(3));return}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&WF.pending){WF.pending=null;$$('.wf-in').forEach(p=>p.classList.remove('wf-armed'))}});
+let wfDrag=null;
+$('#wf-canvas').addEventListener('mousedown',e=>{
+  if(e.button!==0)return;
+  const r=$('#wf-canvas').getBoundingClientRect();
+  const hd=e.target.closest('[data-drag]');
+  if(hd){
+    const n=wfNode(hd.dataset.drag);
+    wfDrag={id:n.id,dx:e.clientX-r.left-WF.pan.x-n.x*WF.zoom,dy:e.clientY-r.top-WF.pan.y-n.y*WF.zoom};
+  }else if(!e.target.closest('.wf-node')){
+    wfDrag={pan:true,sx:e.clientX,sy:e.clientY,ox:WF.pan.x,oy:WF.pan.y};
+    $('#wf-canvas').style.cursor='grabbing';
+  }
+});
+window.addEventListener('mousemove',e=>{
+  if(!wfDrag)return;
+  if(wfDrag.pan){WF.pan.x=wfDrag.ox+(e.clientX-wfDrag.sx);WF.pan.y=wfDrag.oy+(e.clientY-wfDrag.sy);wfView()}
+  else{
+    const r=$('#wf-canvas').getBoundingClientRect();
+    const n=wfNode(wfDrag.id);
+    n.x=Math.max(0,(e.clientX-r.left-WF.pan.x-wfDrag.dx)/WF.zoom);
+    n.y=Math.max(0,(e.clientY-r.top-WF.pan.y-wfDrag.dy)/WF.zoom);
+    const el=$('#wn-'+n.id);el.style.left=n.x+'px';el.style.top=n.y+'px';
+    wfEdgesDraw();
+  }
+});
+window.addEventListener('mouseup',()=>{if(wfDrag){wfDrag=null;wfSave();$('#wf-canvas').style.cursor='grab'}});
+$('#wf-canvas').addEventListener('wheel',e=>{
+  e.preventDefault();
+  const r=$('#wf-canvas').getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;
+  const wx=(mx-WF.pan.x)/WF.zoom,wy=(my-WF.pan.y)/WF.zoom;
+  WF.zoom=Math.min(1.6,Math.max(.35,WF.zoom*(e.deltaY<0?1.12:.89)));
+  WF.pan.x=mx-wx*WF.zoom;WF.pan.y=my-wy*WF.zoom;
+  wfView();
+},{passive:false});
+$('#wf-zin').onclick=()=>{WF.zoom=Math.min(1.6,WF.zoom*1.15);wfView()};
+$('#wf-zout').onclick=()=>{WF.zoom=Math.max(.35,WF.zoom*.87);wfView()};
+$$('.pal-item').forEach(p=>{
+  p.addEventListener('click',()=>wfAdd(p.dataset.add));
+  p.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain',p.dataset.add));
+});
+const wfCv=$('#wf-canvas');
+wfCv.addEventListener('dragover',e=>e.preventDefault());
+wfCv.addEventListener('drop',e=>{
+  e.preventDefault();
+  const t=e.dataTransfer.getData('text/plain');
+  if(!WF_N[t])return;
+  const r=wfCv.getBoundingClientRect();
+  const wx=(e.clientX-r.left-WF.pan.x)/WF.zoom,wy=(e.clientY-r.top-WF.pan.y)/WF.zoom;
+  wfAdd(t,wx-105,wy-22);
+});
+$('#wf-pal-toggle').onclick=()=>{const p=$('#wf-pal');const hid=p.classList.toggle('hidden');$('#wf-pal-toggle').textContent=hid?'Show palette':'Hide palette'};
+$('#wf-run').onclick=()=>withBtn('#wf-run',async()=>{
+  if(!WF.nodes.length)throw new Error('Add nodes first.');
+  if(!S.ready)throw new Error('Python is still loading...');
+  const spec={nodes:WF.nodes.map(n=>({id:n.id,type:n.type,params:n.params})),edges:WF.edges.map(e=>({from:e.from,fromPort:e.fp,to:e.to,port:e.tp}))};
+  const r=JSON.parse(runFlowPy(JSON.stringify(spec)));
+  if(!r.ok)throw new Error(r.error);
+  for(const[id,st]of Object.entries(r.nodes)){
+    const n=wfNode(id);if(!n)continue;
+    n.status=st.status;n.report=st.report||null;n.error=st.error||null;
+  }
+  wfRenderAll();
+  const bad=Object.values(r.nodes).filter(x=>x.status==='error').length;
+  toast(bad?bad+' node(s) failed \u2014 click them for details.':'Pipeline ran \u2014 click nodes to inspect.',bad?'':'ok');
+});
+$('#wf-clear').onclick=()=>{if(!confirm('Clear the whole canvas?'))return;WF={nodes:[],edges:[],seq:1,sel:null,pending:null,pan:{x:40,y:30},zoom:1};wfSave();wfView();wfRenderAll()};
+function wfDemo(){
+  WF={nodes:[],edges:[],seq:1,sel:null,pending:null,pan:{x:40,y:30},zoom:1};
+  const a=(t,x,y,p)=>{const n={id:'n'+(WF.seq++),type:t,x,y,params:Object.assign(wfDefaults(t),p||{}),status:null,report:null};WF.nodes.push(n);return n.id};
+  const n1=a('input',40,120,{source:'housing'});
+  const n2=a('filter',280,40,{col:'neighborhood',op:'==',value:'Urban'});
+  const n3=a('split',520,40,{test_size:.25,seed:42});
+  const n4=a('model',760,40,{algo:'gbt',target:'price',n_estimators:60});
+  const n5=a('evaluate',1000,40);
+  const n6=a('model',520,260,{algo:'ridge',target:'price'});
+  const n7=a('evaluate',760,260);
+  WF.edges=[{from:n1,fp:'out',to:n2,tp:'in'},{from:n2,fp:'out',to:n3,tp:'in'},{from:n3,fp:'train',to:n4,tp:'train'},{from:n3,fp:'test',to:n4,tp:'test'},{from:n4,fp:'scored',to:n5,tp:'in'},{from:n2,fp:'out',to:n6,tp:'train'},{from:n6,fp:'scored',to:n7,tp:'in'}];
+  wfSave();wfRenderAll();
+  setTimeout(()=>$('#wf-run').click(),80);
+}
+$$('#g-x,#g-y,#g-g,#g-agg').forEach(el=>el.addEventListener('change',graphKinds));
+renderFields();
+$('#g-swap').onclick=()=>{const x=$('#g-x'),y=$('#g-y');const xv=x.value;x.value=y.value;y.value=xv;graphKinds();if(S.lastGraph)runGraph(S.lastGraph.orig)};
+fillSel($('#sent-model'),Object.entries(SENT_MODELS).map(([v,t])=>({v,t})));
+$('#pal-sel').innerHTML=Object.entries(PALETTES).map(([k,p])=>'<option value="'+k+'">'+esc(p.label)+'</option>').join('');
+$('#pal-sel').onchange=e=>applyPalette(e.target.value);
+try{const sp=localStorage.getItem('capyml-pal');if(sp&&PALETTES[sp]){PAL=PALETTES[sp].colors;$('#pal-sel').value=sp}}catch(e){}
+[['#btn-paste','up'],['#btn-lin','play'],['#btn-cl','play'],['#btn-nl','play'],['#btn-corr','grid'],['#btn-sent','spark'],['#wf-run','play'],['#wf-demo','zap'],['#wf-clear','calc'],['#xlsx-btn','down'],['#csv-btn','down'],['#purge-btn','calc']].forEach(([sel,ic])=>{const b=$(sel);if(b&&!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin',icon(ic))});
+$$('.t-run').forEach(b=>{if(!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin',icon('play'))});
+$$('[data-sample]').forEach(b=>{if(!b.querySelector('svg'))b.insertAdjacentHTML('afterbegin',icon('db'))});
+$('#wf-demo').onclick=()=>wfDemo();
+renderSurvey();
+renderFields();
+wfLoad();
+boot();
+</script>
+</body>
+</html>
