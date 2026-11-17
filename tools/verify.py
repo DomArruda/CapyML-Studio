@@ -104,7 +104,13 @@ r = ok(J({'task': 'graph', 'kind': 'line', 'x': 'house_age', 'y': 'price'}), 'li
 assert r['kind'] == 'line' and len(r['series'][0]['x']) == len(r['series'][0]['y'])
 r = ok(J({'task': 'graph', 'kind': 'bar', 'x': 'neighborhood', 'y': 'price', 'agg': 'mean', 'group': 'lot_size'}), 'bar gradient')
 assert r['color_mode'] == 'gradient' and 'c' in r['series'][0]
-print('graphs OK')
+r = ok(J({'task': 'graph', 'kind': 'bar', 'x': 'neighborhood', 'y': 'price', 'agg': 'mean', 'nest_cols': ['garage']}), 'bar nested')
+labels = r['series'][0]['x']
+assert any(' \u00b7 ' in str(l2) for l2 in labels), 'nest separator missing: %s' % labels[:5]
+json.loads(sample('abtest'))
+r = ok(J({'task': 'graph', 'kind': 'stacked', 'x': 'group', 'y': None, 'group': 'device', 'nest_cols': ['converted']}), 'stacked nested')
+assert any(' \u00b7 ' in str(l2) for l2 in r['series'][0]['x'])
+print('graphs OK (incl. X nesting)')
 
 json.loads(sample('abtest'))
 for t, spec in [

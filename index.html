@@ -268,10 +268,11 @@ function ovMB(){const e=document.getElementById('ov-mb');if(e)e.textContent=S.dl
         <div id="fld-meas" class="overflow-y-auto" style="max-height:280px"></div>
       </div>
       <div>
-        <div class="grid md:grid-cols-3 gap-3">
+        <div class="grid md:grid-cols-4 gap-3">
           <div class="shelf" data-shelf="g-x"><label class="lbl">Columns (X)</label><select id="g-x" class="inp"></select></div>
           <div class="shelf" data-shelf="g-y"><label class="lbl">Rows (Y) &mdash; optional</label><select id="g-y" class="inp"></select></div>
-          <div class="shelf" data-shelf="g-g"><label class="lbl">Color / Group by &mdash; optional</label><select id="g-g" class="inp"></select></div>
+          <div class="shelf" data-shelf="g-g"><label class="lbl">Color &mdash; optional</label><select id="g-g" class="inp"></select></div>
+          <div><label class="lbl">Nest X by &mdash; extra dims</label><select id="g-nest" class="inp" multiple size="3" title="Hold Ctrl / Cmd to pick several: charts nest the X axis into combined categories"></select></div>
         </div>
         <div class="flex items-center gap-3 mt-2 flex-wrap">
           <button id="g-swap" class="btn btn-xs" title="Swap the X and Y shelves">&#8646; Swap X/Y</button>
@@ -337,7 +338,7 @@ function ovMB(){const e=document.getElementById('ov-mb');if(e)e.textContent=S.dl
     </div>
     <div class="card lg:col-span-2 space-y-3">
       <div id="lin-out"></div>
-      <div><h2>Coefficients (impact &amp; direction)</h2><div id="lin-coef" class="plot" style="height:300px"></div></div>
+      <div class="flex items-center justify-between gap-2"><h2 style="margin:0">Coefficients (impact &amp; direction)</h2><label class="flex items-center gap-1 text-xs font-semibold"><input id="lin-std" type="checkbox" style="accent-color:var(--acc)"> standardized (per SD)</label></div><div id="lin-coef" class="plot" style="height:300px"></div>
       <div><h2>Permutation importance (all models)</h2><div id="lin-perm" class="plot" style="height:280px"></div>
         <p class="text-xs mt-1" style="color:var(--fg2)">Shuffle one column &rarr; how much does the held-out score drop? Bigger drop = the model leaned on it. Red whiskers = variation across 10 shuffles. Caveat: correlated features share credit (e.g. sqft &amp; lot_size) &mdash; cross-check the correlation matrix before concluding a low score means &ldquo;not useful&rdquo;.</p></div>
       <div class="grid md:grid-cols-2 gap-3">
@@ -378,6 +379,7 @@ function ovMB(){const e=document.getElementById('ov-mb');if(e)e.textContent=S.dl
       <div class="grid md:grid-cols-2 gap-3">
         <div class="card" style="background:var(--card2)"><h2 class="text-xs">Confusion matrix (test)</h2><div id="cl-cm" class="plot" style="height:300px"></div></div>
         <div class="card" style="background:var(--card2)"><h2 class="text-xs">Feature importance / coefficients</h2><div id="cl-imp" class="plot" style="height:300px"></div></div>
+        <label class="text-xs font-semibold" style="grid-column:1/-1;margin-top:-6px"><input id="cl-std" type="checkbox" style="accent-color:var(--acc)"> standardized (per SD) &mdash; applies to logistic coefficients</label>
       </div>
       <div><h2>Permutation importance (all models)</h2><div id="cl-perm" class="plot" style="height:280px"></div>
         <p class="text-xs mt-1" style="color:var(--fg2)">Shuffle one column &rarr; how much does held-out accuracy drop? Bigger drop = the model leaned on it. Red whiskers = variation across 10 shuffles. Caveat: correlated features share credit &mdash; cross-check the correlation matrix.</p></div>
@@ -415,6 +417,7 @@ function ovMB(){const e=document.getElementById('ov-mb');if(e)e.textContent=S.dl
       <div id="nl-curve-wrap" class="hidden"><h2>Fitted curve &amp; data</h2><div id="nl-curve" class="plot" style="height:320px"></div></div>
       <div class="card" style="background:var(--card2)"><h2 class="text-xs">Residuals (test)</h2><div id="nl-res" class="plot" style="height:260px"></div></div>
       <div><h2>Permutation importance (all models)</h2><div id="nl-perm" class="plot" style="height:280px"></div>
+        <label class="text-xs font-semibold"><input id="nl-std" type="checkbox" style="accent-color:var(--acc)"> standardized (per SD) &mdash; applies to polynomial coefficients</label>
         <p class="text-xs mt-1" style="color:var(--fg2)">Shuffle one column &rarr; how much does the held-out score drop? Works for curved models too. Caveat: correlated features share credit &mdash; cross-check the correlation matrix.</p></div>
     </div>
   </div>
@@ -991,6 +994,15 @@ def graph_data(df, sp):
     d = df.dropna(subset=use) if use else df
     if len(d) == 0: raise Exception('No rows with complete values for the chosen fields.')
     agg = sp.get('agg', 'mean'); bins = int(sp.get('bins', 20))
+    nest = [str(c) for c in (sp.get('nest_cols') or []) if c and str(c) in d.columns and str(c) != x]
+    xdisp = str(x)
+    if nest and x:
+        parts = [x] + nest
+        sub = d[parts].astype(str)
+        sub = sub.where(d[parts].notna().all(axis=1), None)
+        d = d.copy()
+        d[x] = sub.apply(lambda r2: ' \u00b7 '.join(str(v2) for v2 in r2), axis=1)
+        xdisp = str(x) + ' \u00b7 '.join([' \u00b7 '] + nest)
     series = []
     def smp(v, cap=1500):
         v = list(v)
@@ -1020,21 +1032,21 @@ def graph_data(df, sp):
         d2 = d2.sort_values(x)
         if hasg and pd.api.types.is_numeric_dtype(d2[g]):
             series = [{'name': '%s vs %s' % (y, x), 'x': [float(t) for t in d2[x]], 'y': [float(t) for t in d2[y]], 'c': [float(t) for t in d2[g]]}]
-            return {'kind': kind, 'series': series, 'xname': str(x), 'yname': str(y), 'color_mode': 'gradient', 'colorname': str(g), 'n': int(len(d))}
+            return {'kind': kind, 'series': series, 'xname': str(xdisp), 'yname': str(y), 'color_mode': 'gradient', 'colorname': str(g), 'n': int(len(d))}
         if hasg:
             for lev in d2[g].value_counts().head(10).index:
                 gd2 = d2[d2[g] == lev]
                 series.append({'name': str(lev), 'x': [float(t) for t in gd2[x]], 'y': [float(t) for t in gd2[y]]})
         else:
             series = [{'name': '%s vs %s' % (y, x), 'x': [float(t) for t in d2[x]], 'y': [float(t) for t in d2[y]]}]
-        return {'kind': kind, 'series': series, 'xname': str(x), 'yname': str(y), 'n': int(len(d))}
+        return {'kind': kind, 'series': series, 'xname': str(xdisp), 'yname': str(y), 'n': int(len(d))}
     if kind == 'pie':
         vc = d[x].value_counts().head(12)
-        return {'kind': kind, 'series': [{'name': 'count', 'x': [str(i) for i in vc.index], 'y': [int(v) for v in vc.values]}], 'stat': 'count', 'xname': str(x), 'n': int(len(d))}
+        return {'kind': kind, 'series': [{'name': 'count', 'x': [str(i) for i in vc.index], 'y': [int(v) for v in vc.values]}], 'stat': 'count', 'xname': str(xdisp), 'n': int(len(d))}
     if kind == 'bar':
         if y is None:
             vc = d[x].value_counts().head(40)
-            return {'kind': kind, 'series': [{'name': 'count', 'x': [str(i) for i in vc.index], 'y': [int(v) for v in vc.values]}], 'stat': 'count', 'xname': str(x), 'n': int(len(d))}
+            return {'kind': kind, 'series': [{'name': 'count', 'x': [str(i) for i in vc.index], 'y': [int(v) for v in vc.values]}], 'stat': 'count', 'xname': str(xdisp), 'n': int(len(d))}
         if not is_num(y): raise Exception('Rows (Y) must be a measure for bars.')
         if g and g != x and g != y and is_num(g):
             if agg == 'count':
@@ -1042,7 +1054,7 @@ def graph_data(df, sp):
             else:
                 gg = d.groupby(x)[[y, g]].agg(agg).sort_values(y, ascending=False).head(30)
             series = [{'name': '%s of %s' % (agg, y), 'x': [str(i) for i in gg.index], 'y': [f(v) for v in gg[y]], 'c': [f(v) for v in gg[g]]}]
-            return {'kind': kind, 'series': series, 'stat': agg, 'xname': str(x), 'yname': str(y), 'color_mode': 'gradient', 'colorname': str(g), 'n': int(len(d))}
+            return {'kind': kind, 'series': series, 'stat': agg, 'xname': str(xdisp), 'yname': str(y), 'color_mode': 'gradient', 'colorname': str(g), 'n': int(len(d))}
         if g and g != x and g != y and not is_num(g):
             piv = d.pivot_table(index=x, columns=g, values=y, aggfunc=agg)
             order = piv.mean(axis=1).sort_values(ascending=False).index[:30]
@@ -1051,7 +1063,7 @@ def graph_data(df, sp):
         else:
             gg = d.groupby(x)[y].agg(agg).sort_values(ascending=False).head(30)
             series = [{'name': '%s of %s' % (agg, y), 'x': [str(i) for i in gg.index], 'y': [f(v) for v in gg.values]}]
-        return {'kind': kind, 'series': series, 'stat': agg, 'xname': str(x), 'yname': str(y), 'n': int(len(d))}
+        return {'kind': kind, 'series': series, 'stat': agg, 'xname': str(xdisp), 'yname': str(y), 'n': int(len(d))}
     if kind in ('grouped', 'stacked', 'heatcat'):
         gc = g if g else y
         if not gc or gc == x or is_num(gc) or is_num(x): raise Exception('Need two categorical fields (X + Color/Y).')
@@ -1061,9 +1073,9 @@ def graph_data(df, sp):
         top = ct.sum(axis=0).sort_values(ascending=False).index[:10]
         ct = ct[top]
         if kind == 'heatcat':
-            return {'kind': kind, 'z': ct.values.tolist(), 'xlab': [str(c) for c in ct.columns], 'ylab': [str(i) for i in ct.index], 'xname': str(x), 'yname': str(gc), 'n': int(len(d))}
+            return {'kind': kind, 'z': ct.values.tolist(), 'xlab': [str(c) for c in ct.columns], 'ylab': [str(i) for i in ct.index], 'xname': str(xdisp), 'yname': str(gc), 'n': int(len(d))}
         series = [{'name': str(c), 'x': [str(i) for i in ct.index], 'y': [int(v) for v in ct[c]]} for c in ct.columns]
-        return {'kind': kind, 'series': series, 'stat': 'count', 'xname': str(x), 'yname': str(gc), 'n': int(len(d))}
+        return {'kind': kind, 'series': series, 'stat': 'count', 'xname': str(xdisp), 'yname': str(gc), 'n': int(len(d))}
     raise Exception('Unknown chart kind.')
 
 def ci_t(m, se, df_):
@@ -1582,6 +1594,7 @@ function populateAll(){
   allSel('g-x',firstNum);allSel('g-y','',true);allSel('g-g','',true);
   $('#corr-cols').innerHTML=S.cols.filter(c=>c.type==='num').map(c=>'<label class="chip"><input type="checkbox" checked value="'+esc(c.name)+'">'+esc(c.name)+'</label>').join('');
   if(cats.length)catSel('sent-col',firstCat);else allSel('sent-col','');
+  $('#g-nest').innerHTML=colsByType('cat').map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
   renderFields();
   graphKinds();
 }
@@ -1709,14 +1722,16 @@ const CHART_TYPES=[
  ['boxfac','box','Box per ...','One box plot per dimension value']
 ];
 function viable(kind){
-  const nums=colsByType('num').length,cats=colsByType('cat').length;
+  const x=$('#g-x').value,y=$('#g-y').value||null,g=$('#g-g').value||null;
+  const nums=colsByType('num'),cats=colsByType('cat');
+  const nx=typeOf(x)==='num',ny=y?typeOf(y)==='num':false,ng=g?typeOf(g)==='num':false;
   switch(kind){
-    case 'hist':case 'box':case 'violin':return nums>=1;
-    case 'bar':return cats>=1&&nums>=1;
-    case 'scatter':case 'line':return nums>=2;
-    case 'pie':return cats>=1;
-    case 'grouped':case 'stacked':case 'heatcat':return cats>=2;
-    case 'histfac':case 'boxfac':return nums>=1&&cats>=1;
+    case 'hist':case 'box':case 'violin':return nx||(y&&ny);
+    case 'bar':return (typeOf(x)==='cat'||nx)&&nums.length>0;
+    case 'scatter':case 'line':return (nx&&ny)||(nx&&nums.length>=2);
+    case 'pie':return typeOf(x)==='cat';
+    case 'grouped':case 'stacked':case 'heatcat':return cats.length>=2&&(typeOf(x)==='cat');
+    case 'histfac':case 'boxfac':return nums.length>=1&&cats.length>=1;
   }
   return false;
 }
@@ -1725,7 +1740,7 @@ function graphKinds(){
   const lk=S.lastKind;
   $('#g-bins-wrap').classList.toggle('hidden',!(lk==='hist'||lk==='histfac'));
   $('#g-agg-lbl').classList.toggle('hidden',lk!=='bar');
-  $('#g-note').innerHTML='All chart types, always shown \u2014 <b style="color:var(--good)">green = your data can build it now</b>. Click any type: shelves auto-adjust (Color: dimension = split series, measure = gradient).';
+  $('#g-note').innerHTML='All chart types, always shown \u2014 <b style="color:var(--good)">green = your current X / Y / Color shelves can build it</b>. Click any type: shelves auto-adjust. Color: dimension = split series, measure = gradient. Nest X by extra dimensions for combined categories.';
   $('#g-kinds').innerHTML=CHART_TYPES.map(([k,ic,l,desc])=>'<button class="btn btn-xs'+(viable(k)?' ok':'')+'" data-kind="'+k+'" title="'+esc(desc)+'">'+icon(ic)+esc(l)+'</button>').join('');
   $$('#g-kinds [data-kind]').forEach(b=>b.onclick=()=>runGraph(b.dataset.kind));
 }
@@ -1737,7 +1752,7 @@ function normShelves(kind){
   const t=n2=>typeOf(n2)||'';
   if(kind==='hist'){if(t(x)!=='num')x=fn(y);y=null}
   else if(kind==='scatter'||kind==='line'){if(t(x)!=='num')x=fn(y);if(!y||t(y)!=='num')y=fn(x);if(!x||!y)throw new Error('This chart needs two measures \u2014 not enough numeric columns.')}
-  else if(kind==='bar'){if(t(x)!=='cat')x=fc();if(!x)throw new Error('Bar needs a dimension \u2014 no categorical columns.');if(!y||t(y)!=='num')y=fn(x)||null}
+  else if(kind==='bar'){if(!x||t(x)===null)x=fc();if(t(x)==='num'&&(!y||t(y)!=='num'))y=fn(x)||null;if(!x)throw new Error('Bar needs a field on X.')}
   else if(kind==='box'||kind==='violin'){if(t(x)==='num'){y=x;x=''}if(!y||t(y)!=='num')y=fn('');if(!y)throw new Error('This chart needs a measure \u2014 no numeric columns.');if(t(x)!=='cat')x=fc(y)}
   else if(kind==='pie'){if(t(x)!=='cat')x=fc();if(!x)throw new Error('Pie needs a dimension \u2014 no categorical columns.');y=null}
   else if(kind==='grouped'||kind==='stacked'||kind==='heatcat'){if(t(x)!=='cat')x=fc();if(t(g)!=='cat')g=fc(x);y=null;if(!x||!g)throw new Error('These charts need two dimensions \u2014 not enough categorical columns.')}
@@ -1746,14 +1761,17 @@ function normShelves(kind){
   $('#g-y').value=y||'';
   $('#g-g').value=g||'';
 }
+function nestSel(){return [...$('#g-nest').selectedOptions].map(o=>o.value).filter(v2=>v2)}
+function refreshKinds(){graphKinds()}
 function runGraph(kind){
   (async()=>{try{
     normShelves(kind);
     const base=kind==='histfac'?'hist':kind==='boxfac'?'box':kind;
     const x=$('#g-x').value;let y=$('#g-y').value||null,g=$('#g-g').value||null;
+    const nest=nestSel();
     if(kind==='histfac'||kind==='boxfac'){g=(g&&typeOf(g)==='cat')?g:null;y=null}
     else if((base==='box'||base==='violin')&&y&&typeOf(y)==='cat'&&!g){g=y;y=null}
-    const spec={task:'graph',kind:base,x,y,group:g,agg:$('#g-agg').value,bins:+$('#g-bins').value||20};
+    const spec={task:'graph',kind:base,x,y,group:g,nest_cols:nest,agg:$('#g-agg').value,bins:+$('#g-bins').value||20};
     if(spec.y===spec.x)spec.y=null;
     if(!spec.x)throw new Error('Pick a Columns (X) field.');
     $('#g-note').textContent='Computing...';await tick();
@@ -1830,11 +1848,14 @@ $('#btn-corr').onclick=()=>withBtn('#btn-corr',async()=>{
 });
 function warnBlock(ws){return ws&&ws.length?'<div class="badge b-bad mb-2" style="white-space:normal;max-width:100%">'+esc(ws.join(' | ').slice(0,300))+'</div>':''}
 function fmtBig(v){return v==null?'\u2014':Math.abs(v)>=1000?v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,','):(+v).toFixed(3)}
-function regBlock(r){
+function regBlock(r,std){
   const pct=r.r2==null?'n/a':Math.round(r.r2*100);
   let impT='';let coefT='';
-  if(r.importances&&r.importances.length)impT='<div class="mb-2">'+tableHTML(['Feature importance','Score'],r.importances.slice(0,10).map(x=>[esc(x[0]),fmt(x[1],4)]))+'</div>';
-  if(r.coefs&&r.coefs.length)coefT='<div class="mb-2">'+tableHTML(['Feature','Coefficient (raw)','Std. beta (per SD)'],r.coefs.slice(0,15).map(c=>['<b>'+esc(c[0])+'</b>',fmtBig(c[1]),fmtBig(c[2])]))+'<p class="text-xs mt-1" style="color:var(--fg2)">Std. beta = effect of a 1-SD change in the feature, in SDs of the target \u2014 comparable across features regardless of units.</p></div>';
+  if(r.importances&&r.importances.length)impT='<div class="mb-2">'+tableHTML(['Feature importance','Score'],r.importances.slice(0,10).map(x2=>[esc(x2[0]),fmt(x2[1],4)]))+'</div>';
+  if(r.coefs&&r.coefs.length){
+    const rows=r.coefs.slice(0,15).map(c=>['<b>'+esc(c[0])+'</b>',fmtBig(c[1]),fmtBig(c[2])]);
+    coefT='<div class="mb-2">'+tableHTML(['Feature','Coefficient (raw)','Std. beta (per SD)'],std?rows.map(x2=>[x2[0],x2[1],'<b>'+x2[2]+'</b>']):rows.map(x2=>[x2[0],'<b>'+x2[1]+'</b>',x2[2]]))+'<p class="text-xs mt-1" style="color:var(--fg2)">Bold = current view. Std. beta = effect of a 1-SD change in the feature, in SDs of the target \u2014 comparable across features regardless of units. Toggle "standardized" above the chart to switch.</p></div>';
+  }
   return '<h2 class="mb-1">'+esc(r.target)+' \u00b7 '+esc(r.model)+' <span class="badge b-no">'+r.kind+'</span></h2>'+warnBlock(r.warnings)+
   statsHTML([['R\u00b2 (test)',fmt(r.r2)],['Adj R\u00b2',fmt(r.adj_r2)],['R\u00b2 (train)',fmt(r.r2_train)],['RMSE',fmt(r.rmse)],['MAE',fmt(r.mae)],['Rows',r.n]])+impT+coefT+
   '<p class="text-xs mt-1 mb-2" style="color:var(--fg2)">'+(r.r2!=null&&r.r2>=0?('Explains \u2248'+pct+'% of held-out variance. '):(r.r2!=null?'Negative R\u00b2 \u2014 worse than predicting the mean on held-out data. ':''))+(r.scaled?'Coefficients are on standardized features. ':'')+r.k+' features \u00b7 seed '+r.seed+'.</p>';
@@ -1852,16 +1873,16 @@ function clfBlock(r){
   statsHTML([['Accuracy (test)',fmt(r.accuracy)],['Accuracy (train)',fmt(r.train_accuracy)],['ROC-AUC',r.auc==null?'n/a':fmt(r.auc)],['Classes',r.classes],['Rows',r.n]])+
   '<div class="mb-2">'+repTable(r.report)+'</div>';
 }
-function coefTraces(r){
+function coefTraces(r,std){
   const cs=r.coefs;if(!cs||!cs.length)return[];
   const top=cs.slice(0,25);
-  const val=c=>c[2]!=null?c[2]:c[1];
-  return [{type:'bar',x:top.map(val),y:top.map(c=>c[0]),orientation:'h',marker:{color:top.map(c=>val(c)>=0?PAL[0]:'#fb7185')}}];
+  const val=c=>std&&c[2]!=null?c[2]:c[1];
+  return [{type:'bar',x:top.map(val),y:top.map(c2=>c2[0]),orientation:'h',marker:{color:top.map(c2=>val(c2)>=0?PAL[0]:'#fb7185')}}];
 }
-function impTraces(r){
+function impTraces(r,std){
   const imp=r.importances;
   if(imp&&imp.length){const t=imp.slice(0,25);return[{type:'bar',x:t.map(c=>c[1]),y:t.map(c=>c[0]),orientation:'h',marker:{color:PAL[0]}}]}
-  return coefTraces(r);
+  return coefTraces(r,std);
 }
 function permTraces(r){
   const p=r.perm;
@@ -1872,8 +1893,9 @@ function permTraces(r){
 $('#btn-lin').onclick=()=>withBtn('#btn-lin',async()=>{
   const r=await run({task:'model',model:document.querySelector('input[name=lin-model]:checked').value,target:$('#lin-target').value,features:checkedVals('lin-feats'),alpha:+$('#lin-alpha').value,l1_ratio:+$('#lin-l1').value,test_size:+$('#lin-ts').value,seed:+$('#lin-seed').value||42,scale:$('#lin-scale').checked});
   S.sheets['Linear Model']=[{metric:'R2 (test)',value:r.r2},{metric:'Adj R2',value:r.adj_r2},{metric:'R2 (train)',value:r.r2_train},{metric:'RMSE',value:r.rmse},{metric:'MAE',value:r.mae},{metric:'Rows',value:r.n},{metric:'Features',value:r.k},{metric:'Target',value:r.target},{metric:'Model',value:r.model},{metric:'Seed',value:r.seed}].concat((r.coefs||[]).map(c=>({feature:c[0],coefficient:c[1],std_beta:c[2]})),(r.perm||[]).map(p=>({feature:p[0]+' (perm)',importance:p[1],sd:p[2]})));
-  $('#lin-out').innerHTML=regBlock(r);
-  plot('lin-coef',coefTraces(r),{xaxis:{title:'std. beta (per SD)'},margin:{l:110}});
+  S['last-lin']=r;
+  $('#lin-out').innerHTML=regBlock(r,$('#lin-std').checked);
+  plot('lin-coef',coefTraces(r,$('#lin-std').checked),{xaxis:{title:$('#lin-std').checked?'std. beta (per SD)':'coefficient (raw)'},margin:{l:110}});
   plot('lin-perm',permTraces(r),{xaxis:{title:'R\u00b2 drop when shuffled (held-out)'},margin:{l:110}});
   const lo=Math.min(...r.avp.x,...r.avp.y),hi=Math.max(...r.avp.x,...r.avp.y);
   plot('lin-avp',[{type:'scatter',mode:'markers',x:r.avp.x,y:r.avp.y,name:'predictions',marker:{color:PAL[0],size:5,opacity:.65}},{type:'scatter',mode:'lines',x:[lo,hi],y:[lo,hi],name:'ideal',line:{color:'#fb7185',dash:'dot'},hoverinfo:'skip'}],{xaxis:{title:'actual'},yaxis:{title:'predicted'},showlegend:true});
@@ -1885,9 +1907,10 @@ $('#btn-cl').onclick=()=>withBtn('#btn-cl',async()=>{
   const r=await run({task:'model',model:document.querySelector('input[name=cl-model]:checked').value,target:$('#cl-target').value,features:checkedVals('cl-feats'),C:+$('#cl-C').value||1,max_depth:md,n_estimators:+$('#cl-nest').value,learning_rate:+$('#cl-lr').value,test_size:+$('#cl-ts').value,seed:+$('#cl-seed').value||42,scale:$('#cl-scale').checked});
   const repRows=Object.entries(r.report||{}).filter(([k,v])=>v&&typeof v==='object').map(([k,v])=>({class:k,precision:v.precision,recall:v.recall,f1:v['f1-score'],support:v.support}));
   S.sheets['Classification']=[{metric:'Accuracy (test)',value:r.accuracy},{metric:'Accuracy (train)',value:r.train_accuracy},{metric:'ROC-AUC',value:r.auc},{metric:'Classes',value:r.classes},{metric:'Rows',value:r.n},{metric:'Target',value:r.target},{metric:'Model',value:r.model}].concat(repRows,(r.importances||r.coefs||[]).map(x=>({feature:x[0],score:x[1]})),(r.perm||[]).map(p=>({feature:p[0]+' (perm)',importance:p[1],sd:p[2]})));
+  S['last-cl']=r;
   $('#cl-out').innerHTML=clfBlock(r);
   plot('cl-cm',[{type:'heatmap',z:r.cm,x:r.labels,y:r.labels,colorscale:[[0,'rgba(129,140,248,.05)'],[1,'#6366f1']],showscale:false,hovertemplate:'actual %{y} \u00b7 predicted %{x}: %{z}<extra></extra>'}],{xaxis:{title:'predicted',gridcolor:'rgba(0,0,0,0)'},yaxis:{title:'actual',gridcolor:'rgba(0,0,0,0)'},margin:{l:84},plot_bgcolor:'rgba(161,161,170,.06)'});
-  plot('cl-imp',impTraces(r),{margin:{l:110}});
+  plot('cl-imp',impTraces(r,$('#cl-std').checked),{margin:{l:110}});
   plot('cl-perm',permTraces(r),{xaxis:{title:'accuracy drop when shuffled (held-out)'},margin:{l:110}});
   const rw=$('#cl-rules-wrap');const rtxt=r.rules||(r.gbt_tree?'How boosting works \u2014 first weak learner:\n\n'+r.gbt_tree:null);if(rtxt){rw.classList.remove('hidden');$('#cl-rules').textContent=rtxt}else rw.classList.add('hidden');
 });
@@ -1895,7 +1918,8 @@ $('#btn-nl').onclick=()=>withBtn('#btn-nl',async()=>{
   const md=$('#nl-unlim').checked?null:+$('#nl-depth').value;
   const r=await run({task:'model',model:document.querySelector('input[name=nl-model]:checked').value,target:$('#nl-target').value,features:checkedVals('nl-feats'),degree:+$('#nl-degree').value,max_depth:md,n_estimators:+$('#nl-nest').value,learning_rate:+$('#nl-lr').value,test_size:+$('#nl-ts').value,seed:+$('#nl-seed').value||42,scale:false});
   S.sheets['Non-linear Model']=[{metric:'R2 (test)',value:r.r2},{metric:'Adj R2',value:r.adj_r2},{metric:'R2 (train)',value:r.r2_train},{metric:'RMSE',value:r.rmse},{metric:'MAE',value:r.mae},{metric:'Rows',value:r.n},{metric:'Features',value:r.k},{metric:'Target',value:r.target},{metric:'Model',value:r.model},{metric:'Degree',value:r.degree||''}].concat((r.coefs||r.importances||[]).map(c=>({feature:c[0],value:c[1]})),(r.perm||[]).map(p=>({feature:p[0]+' (perm)',importance:p[1],sd:p[2]})));
-  $('#nl-out').innerHTML=regBlock(r)+((r.rules||r.gbt_tree)?'<div class="mt-2"><h2>'+(r.rules?'Decision tree rules':'How boosting works \u2014 first weak learner')+'</h2><pre class="rules">'+esc(r.rules||r.gbt_tree)+'</pre></div>':'');
+  S['last-nl']=r;
+  $('#nl-out').innerHTML=regBlock(r,$('#nl-std').checked)+((r.rules||r.gbt_tree)?'<div class="mt-2"><h2>'+(r.rules?'Decision tree rules':'How boosting works \u2014 first weak learner')+'</h2><pre class="rules">'+esc(r.rules||r.gbt_tree)+'</pre></div>':'');
   if(r.curve&&r.feat_name){$('#nl-curve-wrap').classList.remove('hidden');
     plot('nl-curve',[{type:'scatter',mode:'markers',x:r.avp.x,y:r.avp.y,name:'data (test)',marker:{color:'#a1a1aa',size:5,opacity:.55}},{type:'scatter',mode:'lines',x:r.curve.x,y:r.curve.y,name:'fitted model',line:{color:PAL[0],width:2.5}}],{xaxis:{title:r.feat_name},yaxis:{title:r.target},showlegend:true});
   }else $('#nl-curve-wrap').classList.add('hidden');
@@ -1903,6 +1927,15 @@ $('#btn-nl').onclick=()=>withBtn('#btn-nl',async()=>{
   plot('nl-res',[{type:'scatter',mode:'markers',x:r.resid.x,y:r.resid.y,marker:{color:'#a1a1aa',size:5,opacity:.65}},{type:'scatter',mode:'lines',x:[rl,rh],y:[0,0],line:{color:'#fb7185',dash:'dot'},hoverinfo:'skip'}],{xaxis:{title:'predicted'},yaxis:{title:'residual'}});
   plot('nl-perm',permTraces(r),{xaxis:{title:'R\u00b2 drop when shuffled (held-out)'},margin:{l:110}});
 });
+['#lin-std','#cl-std','#nl-std'].forEach(id=>$(id).addEventListener('change',()=>{
+  const lab=id.slice(1,3);
+  const r=S['last-'+lab];
+  if(!r)return;
+  const std=$(id).checked;
+  if(lab==='lin'){plot('lin-coef',coefTraces(r,std),{xaxis:{title:std?'std. beta (per SD)':'coefficient (raw)'},margin:{l:110}});$('#lin-out').innerHTML=regBlock(r,std);}
+  else if(lab==='cl')plot('cl-imp',impTraces(r,std),{margin:{l:110}});
+  else if(lab==='nl'&&r.coefs)$('#nl-out').innerHTML=regBlock(r,std)+((r.rules||r.gbt_tree)?'<div class="mt-2"><h2>'+(r.rules?'Decision tree rules':'How boosting works \u2014 first weak learner')+'</h2><pre class="rules">'+esc(r.rules||r.gbt_tree)+'</pre></div>':'');
+}));
 function verdictHTML(p){
   return p==null?'<span class="badge b-no">p unavailable</span>':(p<0.05?'<span class="badge b-ok">Statistically significant at \u03b1 = 0.05 \u2014 reject H\u2080</span>':'<span class="badge b-no">Not significant at \u03b1 = 0.05 \u2014 fail to reject H\u2080</span>');
 }
@@ -2279,9 +2312,10 @@ function wfDemo(){
   wfSave();wfRenderAll();
   setTimeout(()=>$('#wf-run').click(),80);
 }
-$$('#g-x,#g-y,#g-g,#g-agg').forEach(el=>el.addEventListener('change',graphKinds));
+$$('#g-x,#g-y,#g-g,#g-agg').forEach(el=>el.addEventListener('change',refreshKinds));
+$('#g-nest').addEventListener('change',()=>{if(S.lastGraph)runGraph(S.lastGraph.orig);refreshKinds()});
 renderFields();
-$('#g-swap').onclick=()=>{const x=$('#g-x'),y=$('#g-y');const xv=x.value;x.value=y.value;y.value=xv;graphKinds();if(S.lastGraph)runGraph(S.lastGraph.orig)};
+$('#g-swap').onclick=()=>{const x=$('#g-x'),y=$('#g-y');const xv=x.value;x.value=y.value;y.value=xv;refreshKinds();if(S.lastGraph)runGraph(S.lastGraph.orig)};
 fillSel($('#sent-model'),Object.entries(SENT_MODELS).map(([v,t])=>({v,t})));
 $('#pal-sel').innerHTML=Object.entries(PALETTES).map(([k,p])=>'<option value="'+k+'">'+esc(p.label)+'</option>').join('');
 $('#pal-sel').onchange=e=>applyPalette(e.target.value);
