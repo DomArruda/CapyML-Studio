@@ -26,6 +26,10 @@ h2{font-size:.9rem;font-weight:600;margin:0 0 .6rem;letter-spacing:-.01em}
 .btn-pri svg{opacity:1}
 .btn:disabled{opacity:.45;cursor:wait;transform:none}
 .btn-xs{padding:.24rem .55rem;font-size:.72rem;border-radius:.4rem;gap:.3rem}
+.btn.ok{border-color:rgba(16,185,129,.55);background:rgba(16,185,129,.10);color:var(--good)}
+.btn.ok svg{opacity:1}
+.btn.ok:hover{background:rgba(16,185,129,.18);border-color:var(--good)}
+body.light .btn.ok{color:#047857}
 .inp,select.inp,textarea.inp{background:var(--bg);border:1px solid var(--bd);border-radius:.5rem;padding:.4rem .6rem;color:var(--fg);font-size:.8125rem;width:100%;font-family:inherit;transition:border-color .12s,box-shadow .12s}
 .inp:hover{border-color:var(--bdh)}
 .inp:focus{outline:none;border-color:var(--fg2);box-shadow:0 0 0 2px var(--ring)}
@@ -334,6 +338,8 @@ function ovMB(){const e=document.getElementById('ov-mb');if(e)e.textContent=S.dl
     <div class="card lg:col-span-2 space-y-3">
       <div id="lin-out"></div>
       <div><h2>Coefficients (impact &amp; direction)</h2><div id="lin-coef" class="plot" style="height:300px"></div></div>
+      <div><h2>Permutation importance (all models)</h2><div id="lin-perm" class="plot" style="height:280px"></div>
+        <p class="text-xs mt-1" style="color:var(--fg2)">Shuffle one column &rarr; how much does the held-out score drop? Bigger drop = the model leaned on it. Red whiskers = variation across 10 shuffles. Caveat: correlated features share credit (e.g. sqft &amp; lot_size) &mdash; cross-check the correlation matrix before concluding a low score means &ldquo;not useful&rdquo;.</p></div>
       <div class="grid md:grid-cols-2 gap-3">
         <div class="card" style="background:var(--card2)"><h2 class="text-xs">Actual vs Predicted (test)</h2><div id="lin-avp" class="plot" style="height:260px"></div></div>
         <div class="card" style="background:var(--card2)"><h2 class="text-xs">Residuals (test)</h2><div id="lin-res" class="plot" style="height:260px"></div></div>
@@ -373,6 +379,8 @@ function ovMB(){const e=document.getElementById('ov-mb');if(e)e.textContent=S.dl
         <div class="card" style="background:var(--card2)"><h2 class="text-xs">Confusion matrix (test)</h2><div id="cl-cm" class="plot" style="height:300px"></div></div>
         <div class="card" style="background:var(--card2)"><h2 class="text-xs">Feature importance / coefficients</h2><div id="cl-imp" class="plot" style="height:300px"></div></div>
       </div>
+      <div><h2>Permutation importance (all models)</h2><div id="cl-perm" class="plot" style="height:280px"></div>
+        <p class="text-xs mt-1" style="color:var(--fg2)">Shuffle one column &rarr; how much does held-out accuracy drop? Bigger drop = the model leaned on it. Red whiskers = variation across 10 shuffles. Caveat: correlated features share credit &mdash; cross-check the correlation matrix.</p></div>
       <div id="cl-rules-wrap" class="hidden"><h2 class="text-xs">Decision tree rules</h2><pre id="cl-rules" class="rules"></pre></div>
     </div>
   </div>
@@ -406,6 +414,8 @@ function ovMB(){const e=document.getElementById('ov-mb');if(e)e.textContent=S.dl
       <div id="nl-out"></div>
       <div id="nl-curve-wrap" class="hidden"><h2>Fitted curve &amp; data</h2><div id="nl-curve" class="plot" style="height:320px"></div></div>
       <div class="card" style="background:var(--card2)"><h2 class="text-xs">Residuals (test)</h2><div id="nl-res" class="plot" style="height:260px"></div></div>
+      <div><h2>Permutation importance (all models)</h2><div id="nl-perm" class="plot" style="height:280px"></div>
+        <p class="text-xs mt-1" style="color:var(--fg2)">Shuffle one column &rarr; how much does the held-out score drop? Works for curved models too. Caveat: correlated features share credit &mdash; cross-check the correlation matrix.</p></div>
     </div>
   </div>
 
@@ -588,6 +598,7 @@ from math import comb
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.model_selection import train_test_split
+from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet, LogisticRegression
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor, export_text
 from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
@@ -803,7 +814,23 @@ def build_model(kind, sp, is_clf, seed):
     use_scale = bool(sp.get('scale', kind in ('ridge', 'lasso', 'enet', 'logreg')))
     return (make_pipeline(StandardScaler(), m) if use_scale else m), use_scale
 
-def reg_coef_table(m, X, use_scale, kind):
+def last_linear(m2, kind):
+    if kind == 'poly': return m2.named_steps['linearregression']
+    return m2[-1] if hasattr(m2, 'steps') else m2
+
+def std_refit(kind, X, y, sp, seed, is_clf):
+    Xs = (X - X.mean()) / X.std(ddof=1).replace(0.0, 1.0)
+    sp2 = dict(sp); sp2['scale'] = False
+    yy = y
+    if not is_clf:
+        ya = np.asarray(y, dtype=float)
+        sd = float(ya.std(ddof=1)) or 1.0
+        yy = (ya - ya.mean()) / sd
+    m2, _ = build_model(kind, sp2, is_clf, seed)
+    m2.fit(Xs, yy)
+    return np.ravel(last_linear(m2, kind).coef_)
+
+def reg_coef_table(m, X, y, sp, use_scale, kind, seed):
     if kind == 'poly':
         names = list(m.named_steps['polynomialfeatures'].get_feature_names_out(X.columns))
         lm = m.named_steps['linearregression']
@@ -811,9 +838,38 @@ def reg_coef_table(m, X, use_scale, kind):
         names = list(X.columns); lm = m[-1]
     else:
         names = list(X.columns); lm = m
-    coefs = [[str(nm), f(cf)] for nm, cf in zip(names, np.ravel(lm.coef_))]
-    coefs.sort(key=lambda t: -abs(t[1] if t[1] is not None else 0))
+    raw = np.ravel(lm.coef_)
+    try: beta = std_refit(kind, X, np.asarray(y, dtype=float), sp, seed, False)
+    except Exception: beta = [None] * len(raw)
+    coefs = [[str(nm), f(rw), f(bb)] for nm, rw, bb in zip(names, raw, beta)]
+    coefs.sort(key=lambda t: -abs(t[2] if t[2] is not None else (t[1] if t[1] is not None else 0)))
     return coefs
+
+def logreg_rows(lm, X, y, sp, seed):
+    names = [str(c) for c in X.columns]
+    beta = None
+    try:
+        beta = np.asarray(std_refit('logreg', X, y, sp, seed, True), dtype=float).reshape(-1, len(names))
+    except Exception:
+        beta = None
+    rows = []
+    if len(lm.classes_) == 2:
+        b0 = beta[0] if beta is not None else [None] * len(names)
+        rows = [[n, f(v), f(b)] for n, v, b in zip(names, np.ravel(lm.coef_), b0)]
+    else:
+        for ci, cls in enumerate(lm.classes_):
+            bcol = beta[ci] if (beta is not None and beta.shape[0] > ci) else [None] * len(names)
+            rows += [[n + ' [' + str(cls) + ']', f(v), f(b)] for n, v, b in zip(names, lm.coef_[ci], bcol)]
+    rows.sort(key=lambda t: -abs(t[2] if t[2] is not None else (t[1] if t[1] is not None else 0)))
+    return rows
+
+def perm_imp(m, Xte, yte, seed, repeats=10):
+    try:
+        pi = permutation_importance(m, Xte, yte, n_repeats=repeats, random_state=seed, n_jobs=1)
+        order = np.argsort(-pi.importances_mean)
+        return [[str(Xte.columns[i]), f(pi.importances_mean[i]), f(pi.importances_std[i])] for i in order][:25]
+    except Exception:
+        return None
 
 def fit_model(df, sp):
     target = sp.get('target')
@@ -846,15 +902,7 @@ def fit_model(df, sp):
         coefs = None
         if kind == 'logreg':
             lm = m[-1] if use_scale else m
-            names = [str(c) for c in X.columns]
-            if len(lm.classes_) == 2:
-                coefs = [[n, f(v)] for n, v in zip(names, np.ravel(lm.coef_))]
-            else:
-                coefs = []
-                for ci, cls in enumerate(lm.classes_):
-                    for n, v in zip(names, lm.coef_[ci]):
-                        coefs.append([n + ' [' + str(cls) + ']', f(v)])
-            coefs.sort(key=lambda t: -abs(t[1] if t[1] is not None else 0))
+            coefs = logreg_rows(lm, X, y, sp, seed)
         imp = None
         if kind in ('dt', 'gbt'):
             imps = np.asarray(m.feature_importances_); order = np.argsort(-imps)
@@ -870,7 +918,8 @@ def fit_model(df, sp):
             except Exception: gbt_tree = None
         base.update({'accuracy': f(accuracy_score(yte, pred)), 'train_accuracy': f(accuracy_score(ytr, m.predict(Xtr))), 'auc': auc,
                      'labels': [str(l) for l in labels], 'cm': confusion_matrix(yte, pred, labels=labels).tolist(),
-                     'report': rep, 'coefs': coefs, 'importances': imp, 'rules': rules, 'gbt_tree': gbt_tree, 'classes': int(len(labels))})
+                     'report': rep, 'coefs': coefs, 'importances': imp, 'rules': rules, 'gbt_tree': gbt_tree, 'classes': int(len(labels)),
+                     'perm': perm_imp(m, Xte, yte, seed)})
     else:
         pred = m.predict(Xte)
         r2 = f(r2_score(yte, pred)); r2tr = f(r2_score(ytr, m.predict(Xtr)))
@@ -882,7 +931,7 @@ def fit_model(df, sp):
             imps = np.asarray(m.feature_importances_); order = np.argsort(-imps)
             imp = [[str(X.columns[i]), f(imps[i])] for i in order]
         else:
-            coefs = reg_coef_table(m, X, use_scale, kind)
+            coefs = reg_coef_table(m, X, y, sp, use_scale, kind, seed)
         ix = np.random.RandomState(42).choice(len(yte), min(400, len(yte)), replace=False)
         avp = {'x': [float(v) for v in np.asarray(yte)[ix]], 'y': [float(v) for v in np.asarray(pred)[ix]]}
         res = {'x': [float(v) for v in np.asarray(pred)[ix]], 'y': [float(a) - float(v) for a, v in zip(np.asarray(yte)[ix], np.asarray(pred)[ix])]}
@@ -901,7 +950,7 @@ def fit_model(df, sp):
             except Exception: gbt_tree = None
         base.update({'r2': r2, 'r2_train': r2tr, 'adj_r2': adj, 'rmse': f(np.sqrt(mean_squared_error(yte, pred))),
                      'mae': f(mean_absolute_error(yte, pred)), 'coefs': coefs, 'importances': imp, 'avp': avp, 'resid': res, 'curve': curve,
-                     'rules': rules, 'gbt_tree': gbt_tree,
+                     'rules': rules, 'gbt_tree': gbt_tree, 'perm': perm_imp(m, Xte, yte, seed),
                      'feat_name': feats[0] if len(feats) == 1 else None})
     return J({'ok': True, **base})
 
@@ -946,30 +995,36 @@ def graph_data(df, sp):
     def smp(v, cap=1500):
         v = list(v)
         return v if len(v) <= cap else [v[i] for i in np.random.RandomState(42).choice(len(v), cap, replace=False)]
+    def is_num(c):
+        return c in d.columns and pd.api.types.is_numeric_dtype(d[c])
     if kind in ('hist', 'box', 'violin'):
-        if y and y != x and pd.api.types.is_numeric_dtype(d[y]):
-            val, gcol = y, (g if g else x)
+        if y and y != x and is_num(y):
+            val = y
+            gcol = g if (g and not is_num(g) and g != val) else (x if (x and not is_num(x) and x != val) else None)
         else:
-            val, gcol = x, (g if g else None)
-        if gcol == val: gcol = None
-        if gcol and gcol in d.columns:
+            val = x
+            gcol = g if (g and not is_num(g) and g != val) else None
+        if gcol:
             for lev in d[gcol].value_counts().head(12).index:
                 vals = smp(d[d[gcol] == lev][val].astype(float).values)
                 if vals: series.append({'name': str(lev), 'x': [float(t) for t in vals]})
         else:
             series = [{'name': str(val), 'x': [float(t) for t in smp(d[val].astype(float).values)]}]
         return {'kind': kind, 'series': series, 'bins': bins, 'xname': str(val), 'yname': str(val), 'n': int(len(d))}
-    if kind == 'scatter':
-        if not y: raise Exception('Scatter needs a Rows (Y) field.')
+    if kind in ('scatter', 'line'):
+        if not y: raise Exception('This chart needs a Rows (Y) measure.')
         hasg = bool(g) and g != x and g != y and g in d.columns
         d2 = d[[x, y] + ([g] if hasg else [])].copy()
         d2[[x, y]] = d2[[x, y]].astype(float)
         if len(d2) > 1500: d2 = d2.sample(1500, random_state=42)
         d2 = d2.sort_values(x)
+        if hasg and pd.api.types.is_numeric_dtype(d2[g]):
+            series = [{'name': '%s vs %s' % (y, x), 'x': [float(t) for t in d2[x]], 'y': [float(t) for t in d2[y]], 'c': [float(t) for t in d2[g]]}]
+            return {'kind': kind, 'series': series, 'xname': str(x), 'yname': str(y), 'color_mode': 'gradient', 'colorname': str(g), 'n': int(len(d))}
         if hasg:
             for lev in d2[g].value_counts().head(10).index:
-                gd = d2[d2[g] == lev]
-                series.append({'name': str(lev), 'x': [float(t) for t in gd[x]], 'y': [float(t) for t in gd[y]]})
+                gd2 = d2[d2[g] == lev]
+                series.append({'name': str(lev), 'x': [float(t) for t in gd2[x]], 'y': [float(t) for t in gd2[y]]})
         else:
             series = [{'name': '%s vs %s' % (y, x), 'x': [float(t) for t in d2[x]], 'y': [float(t) for t in d2[y]]}]
         return {'kind': kind, 'series': series, 'xname': str(x), 'yname': str(y), 'n': int(len(d))}
@@ -980,19 +1035,26 @@ def graph_data(df, sp):
         if y is None:
             vc = d[x].value_counts().head(40)
             return {'kind': kind, 'series': [{'name': 'count', 'x': [str(i) for i in vc.index], 'y': [int(v) for v in vc.values]}], 'stat': 'count', 'xname': str(x), 'n': int(len(d))}
-        if not pd.api.types.is_numeric_dtype(d[y]): raise Exception('Rows (Y) must be numeric for bars.')
-        if g and g != x and g != y:
+        if not is_num(y): raise Exception('Rows (Y) must be a measure for bars.')
+        if g and g != x and g != y and is_num(g):
+            if agg == 'count':
+                gg = d.groupby(x)[[y, g]].agg({y: 'count', g: 'mean'}).sort_values(y, ascending=False).head(30)
+            else:
+                gg = d.groupby(x)[[y, g]].agg(agg).sort_values(y, ascending=False).head(30)
+            series = [{'name': '%s of %s' % (agg, y), 'x': [str(i) for i in gg.index], 'y': [f(v) for v in gg[y]], 'c': [f(v) for v in gg[g]]}]
+            return {'kind': kind, 'series': series, 'stat': agg, 'xname': str(x), 'yname': str(y), 'color_mode': 'gradient', 'colorname': str(g), 'n': int(len(d))}
+        if g and g != x and g != y and not is_num(g):
             piv = d.pivot_table(index=x, columns=g, values=y, aggfunc=agg)
             order = piv.mean(axis=1).sort_values(ascending=False).index[:30]
             piv = piv.loc[order]
-            series = [{'name': str(c), 'x': [str(i) for i in piv.index], 'y': [f(v) for v in piv[c]]} for c in piv.columns]
+            series = [{'name': str(c2), 'x': [str(i) for i in piv.index], 'y': [f(v) for v in piv[c2]]} for c2 in piv.columns]
         else:
             gg = d.groupby(x)[y].agg(agg).sort_values(ascending=False).head(30)
             series = [{'name': '%s of %s' % (agg, y), 'x': [str(i) for i in gg.index], 'y': [f(v) for v in gg.values]}]
         return {'kind': kind, 'series': series, 'stat': agg, 'xname': str(x), 'yname': str(y), 'n': int(len(d))}
     if kind in ('grouped', 'stacked', 'heatcat'):
         gc = g if g else y
-        if not gc or gc == x: raise Exception('Need two categorical fields (X + Color/Y).')
+        if not gc or gc == x or is_num(gc) or is_num(x): raise Exception('Need two categorical fields (X + Color/Y).')
         ct = pd.crosstab(d[x], d[gc])
         order = ct.sum(axis=1).sort_values(ascending=False).index[:15]
         ct = ct.loc[order]
@@ -1198,19 +1260,11 @@ def fit_frame(df, sp):
         imps = np.asarray(m.feature_importances_); order = np.argsort(-imps)
         rep['importances'] = [[str(X.columns[i]), f(imps[i])] for i in order]
     elif not is_clf:
-        rep['coefs'] = reg_coef_table(m, X, use_scale, kind)
+        rep['coefs'] = reg_coef_table(m, X, y, sp, use_scale, kind, seed)
+    rep['perm'] = perm_imp(m, X, y, seed)
     if is_clf and kind == 'logreg':
         lm = m[-1] if use_scale else m
-        names = [str(c) for c in X.columns]
-        if len(lm.classes_) == 2:
-            rep['coefs'] = [[n, f(v)] for n, v in zip(names, np.ravel(lm.coef_))]
-        else:
-            cc = []
-            for ci, cls in enumerate(lm.classes_):
-                for n, v in zip(names, lm.coef_[ci]):
-                    cc.append([n + ' [' + str(cls) + ']', f(v)])
-            rep['coefs'] = cc
-        rep['coefs'].sort(key=lambda t_: -abs(t_[1] if t_[1] is not None else 0))
+        rep['coefs'] = logreg_rows(lm, X, y, sp, seed)
     if is_clf and kind == 'dt':
         try: rep['rules'] = export_text(m, max_depth=3, feature_names=[str(c) for c in X.columns])
         except Exception: pass
@@ -1487,7 +1541,7 @@ async function loadSample(k){if(!S.ready){toast('Python is still loading...');re
 $$('[data-sample]').forEach(b=>b.onclick=()=>loadSample(b.dataset.sample));
 async function ensureXLSX(){if(typeof XLSX!=='undefined')return;if(!await cachedScript(XLSX_URL,()=>typeof XLSX!=='undefined'))await fallbackScript(XLSX_URL);if(typeof XLSX==='undefined')throw new Error('Excel engine (SheetJS) failed to load.')}
 async function ensureXL(){if(typeof ExcelJS!=='undefined')return;if(!await cachedScript(EXCELJS_URL,()=>typeof ExcelJS!=='undefined'))await fallbackScript(EXCELJS_URL);if(typeof ExcelJS==='undefined')throw new Error('Excel writer (ExcelJS) failed to load.')}
-const CHART_SOURCES=[['g-plot','Visual builder chart'],['corr-plot','Correlation matrix'],['lin-coef','Linear model coefficients'],['lin-avp','Actual vs predicted'],['lin-res','Linear model residuals'],['cl-cm','Confusion matrix'],['cl-imp','Feature importance / coefficients'],['nl-curve','Fitted curve'],['nl-res','Non-linear residuals'],['sent-plot','Sentiment label counts']];
+const CHART_SOURCES=[['g-plot','Visual builder chart'],['corr-plot','Correlation matrix'],['lin-coef','Linear std. betas'],['lin-perm','Linear permutation importance'],['lin-avp','Actual vs predicted'],['lin-res','Linear residuals'],['cl-cm','Confusion matrix'],['cl-imp','Classification importances'],['cl-perm','Classification permutation importance'],['nl-curve','Fitted curve'],['nl-res','Non-linear residuals'],['nl-perm','Non-linear permutation importance'],['sent-plot','Sentiment label counts']];
 function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
 async function loadAny(f){
   if(!/\.(xlsx|xls)$/i.test(f.name))return loadText(await f.text(),f.name);
@@ -1640,39 +1694,71 @@ const ICONS={
 };
 function icon(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICONS[n]||'')+'</svg>'}
 function kindIcon(k){return{bar:'bar',hist:'hist',histfac:'hist',scatter:'scatter',line:'line',box:'box',boxfac:'box',violin:'violin',pie:'pie',grouped:'bar',stacked:'bar',heatcat:'grid'}[k]||'bar'}
-function graphKinds(){
-  const x=$('#g-x').value,y=$('#g-y').value||'',g=$('#g-g').value||'';
-  const xt=typeOf(x),yt=y?typeOf(y):null;
-  const ft=(g&&typeOf(g)==='cat')?g:(yt==='cat'?y:null);
-  const opts=[];
-  if(!x){$('#g-kinds').innerHTML='';$('#g-note').textContent='Pick a Columns (X) field.';$('#g-bins-wrap').classList.add('hidden');$('#g-agg-lbl').classList.add('hidden');return}
-  if(xt==='num'){
-    if(!y||yt==='num')opts.push(['hist','Histogram of '+x]);
-    if(yt==='num'){opts.push(['scatter','Scatter: '+y+' vs '+x]);opts.push(['box','Box: '+y]);opts.push(['violin','Violin: '+y])}
-    if(yt==='cat'){opts.push(['box','Box: '+x+' by '+y]);opts.push(['violin','Violin: '+x+' by '+y])}
-    if(ft){opts.push(['histfac','Histogram per '+ft]);opts.push(['boxfac','Box per '+ft])}
-  }else{
-    if(yt==='num'){opts.push(['bar','Bar: '+$('#g-agg').value+' of '+y+' by '+x]);opts.push(['box','Box: '+y+' by '+x]);opts.push(['violin','Violin: '+y+' by '+x])}
-    if(yt==='cat'){opts.push(['grouped','Grouped bars']);opts.push(['stacked','Stacked bars']);opts.push(['heatcat','Heatmap (counts)'])}
-    if(!y){opts.push(['bar','Bar: counts of '+x]);opts.push(['pie','Pie: share of '+x])}
+const CHART_TYPES=[
+ ['hist','hist','Histogram','Distribution of one measure (splits per dimension value if one is picked)'],
+ ['bar','bar','Bar','Aggregate of a measure by a dimension'],
+ ['box','box','Box & Whisker','Spread and median of a measure'],
+ ['violin','violin','Violin','Full distribution shape of a measure'],
+ ['scatter','scatter','Scatter','Relationship between two measures'],
+ ['line','line','Line','Trend of a measure along an ordered or date field'],
+ ['pie','pie','Pie','Share of a total by dimension'],
+ ['grouped','bar','Grouped Bars','Counts across two dimensions'],
+ ['stacked','bar','Stacked Bars','Counts across two dimensions, stacked'],
+ ['heatcat','grid','Heatmap','Count grid across two dimensions'],
+ ['histfac','hist','Histogram per ...','One histogram per dimension value'],
+ ['boxfac','box','Box per ...','One box plot per dimension value']
+];
+function viable(kind){
+  const nums=colsByType('num').length,cats=colsByType('cat').length;
+  switch(kind){
+    case 'hist':case 'box':case 'violin':return nums>=1;
+    case 'bar':return cats>=1&&nums>=1;
+    case 'scatter':case 'line':return nums>=2;
+    case 'pie':return cats>=1;
+    case 'grouped':case 'stacked':case 'heatcat':return cats>=2;
+    case 'histfac':case 'boxfac':return nums>=1&&cats>=1;
   }
-  $('#g-bins-wrap').classList.toggle('hidden',!opts.some(o=>o[0]==='hist'||o[0]==='histfac'));
-  $('#g-agg-lbl').classList.toggle('hidden',!opts.some(o=>o[0]==='bar'));
-  $('#g-note').textContent='Dimensions = categorical \u00b7 Measures = numeric. "per ..." charts render one mini-panel for each subcategory.';
-  $('#g-kinds').innerHTML=opts.map(([k,l])=>'<button class="btn btn-xs" data-kind="'+k+'">'+icon(kindIcon(k))+esc(l)+'</button>').join('');
+  return false;
+}
+function graphKinds(){
+  if(!S.cols.length){$('#g-kinds').innerHTML='';$('#g-note').textContent='Load a dataset to pick chart types.';$('#g-bins-wrap').classList.add('hidden');$('#g-agg-lbl').classList.add('hidden');return}
+  const lk=S.lastKind;
+  $('#g-bins-wrap').classList.toggle('hidden',!(lk==='hist'||lk==='histfac'));
+  $('#g-agg-lbl').classList.toggle('hidden',lk!=='bar');
+  $('#g-note').innerHTML='All chart types, always shown \u2014 <b style="color:var(--good)">green = your data can build it now</b>. Click any type: shelves auto-adjust (Color: dimension = split series, measure = gradient).';
+  $('#g-kinds').innerHTML=CHART_TYPES.map(([k,ic,l,desc])=>'<button class="btn btn-xs'+(viable(k)?' ok':'')+'" data-kind="'+k+'" title="'+esc(desc)+'">'+icon(ic)+esc(l)+'</button>').join('');
   $$('#g-kinds [data-kind]').forEach(b=>b.onclick=()=>runGraph(b.dataset.kind));
+}
+function normShelves(kind){
+  const cats=colsByType('cat'),nums=colsByType('num');
+  let x=$('#g-x').value,y=$('#g-y').value||null,g=$('#g-g').value||null;
+  const fn=ex=>nums.find(n2=>n2!==ex)||'';
+  const fc=ex=>cats.find(n2=>n2!==ex)||'';
+  const t=n2=>typeOf(n2)||'';
+  if(kind==='hist'){if(t(x)!=='num')x=fn(y);y=null}
+  else if(kind==='scatter'||kind==='line'){if(t(x)!=='num')x=fn(y);if(!y||t(y)!=='num')y=fn(x);if(!x||!y)throw new Error('This chart needs two measures \u2014 not enough numeric columns.')}
+  else if(kind==='bar'){if(t(x)!=='cat')x=fc();if(!x)throw new Error('Bar needs a dimension \u2014 no categorical columns.');if(!y||t(y)!=='num')y=fn(x)||null}
+  else if(kind==='box'||kind==='violin'){if(t(x)==='num'){y=x;x=''}if(!y||t(y)!=='num')y=fn('');if(!y)throw new Error('This chart needs a measure \u2014 no numeric columns.');if(t(x)!=='cat')x=fc(y)}
+  else if(kind==='pie'){if(t(x)!=='cat')x=fc();if(!x)throw new Error('Pie needs a dimension \u2014 no categorical columns.');y=null}
+  else if(kind==='grouped'||kind==='stacked'||kind==='heatcat'){if(t(x)!=='cat')x=fc();if(t(g)!=='cat')g=fc(x);y=null;if(!x||!g)throw new Error('These charts need two dimensions \u2014 not enough categorical columns.')}
+  else if(kind==='histfac'||kind==='boxfac'){if(t(x)!=='num')x=fn(y);if(t(g)!=='cat')g=fc(x);y=null;if(!x)throw new Error('This chart needs a measure \u2014 no numeric columns.')}
+  $('#g-x').value=x||'';
+  $('#g-y').value=y||'';
+  $('#g-g').value=g||'';
 }
 function runGraph(kind){
   (async()=>{try{
+    normShelves(kind);
     const base=kind==='histfac'?'hist':kind==='boxfac'?'box':kind;
     const x=$('#g-x').value;let y=$('#g-y').value||null,g=$('#g-g').value||null;
-    if(kind==='histfac'||kind==='boxfac'){g=(g&&typeOf(g)==='cat')?g:(y&&typeOf(y)==='cat'?y:null);y=null}
+    if(kind==='histfac'||kind==='boxfac'){g=(g&&typeOf(g)==='cat')?g:null;y=null}
     else if((base==='box'||base==='violin')&&y&&typeOf(y)==='cat'&&!g){g=y;y=null}
     const spec={task:'graph',kind:base,x,y,group:g,agg:$('#g-agg').value,bins:+$('#g-bins').value||20};
     if(spec.y===spec.x)spec.y=null;
+    if(!spec.x)throw new Error('Pick a Columns (X) field.');
     $('#g-note').textContent='Computing...';await tick();
     const d=await run(spec);
-    S.lastGraph={orig:kind,base,d};
+    S.lastGraph={orig:kind,base,d};S.lastKind=base;
     if(kind==='histfac'||kind==='boxfac')renderFacets(d,base);else plotGraph(d);
     $('#g-note').textContent=d.n+' rows plotted.';
   }catch(e){$('#g-note').textContent='';toast(e.message)}})();
@@ -1696,20 +1782,36 @@ function rerenderChart(){
   const L=S.lastGraph;
   if(L.orig==='histfac'||L.orig==='boxfac')renderFacets(L.d,L.base);else plotGraph(L.d);
 }
+function hexRGB(h){const s=h.replace('#','');return[parseInt(s.slice(0,2),16),parseInt(s.slice(2,4),16),parseInt(s.slice(4,6),16)]}
+function mixC(a,b,t){const A=hexRGB(a),B=hexRGB(b);return'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')+')'}
+function gradScale(){const a=PAL[0]||'#0072B2';return[[0,mixC('#ffffff',a,.12)],[.55,a],[1,mixC('#000000',a,.35)]]}
+function cbar(t){return{title:{text:t,font:{size:10,color:'#a1a1aa'}},thickness:11,tickfont:{color:'#a1a1aa'},outlinewidth:0}}
 function plotGraph(d){
-  const tr=[];const col=i=>PAL[i%PAL.length];
+  const tr=[];const col=i2=>PAL[i2%PAL.length];
   if(d.kind==='hist')d.series.forEach((s,i)=>tr.push({type:'histogram',x:s.x,name:s.name,opacity:d.series.length>1?.72:1,nbinsx:d.bins,marker:{color:col(i)}}));
   else if(d.kind==='box')d.series.forEach((s,i)=>tr.push({type:'box',y:s.x,name:s.name,marker:{color:col(i)},line:{color:col(i)}}));
   else if(d.kind==='violin')d.series.forEach((s,i)=>tr.push({type:'violin',y:s.x,name:s.name,points:'outliers',line:{color:col(i)},fillcolor:col(i),opacity:.7}));
-  else if(d.kind==='scatter'){
-    d.series.forEach((s,i)=>{tr.push({type:'scatter',mode:'markers',x:s.x,y:s.y,name:s.name,marker:{color:col(i),size:5,opacity:.6}});
-      if($('#g-trend').checked&&s.x.length>1){const o=ols(s.x,s.y);tr.push({type:'scatter',mode:'lines',x:o.x,y:o.x.map(v=>o.m*v+o.b),name:'OLS ('+s.name+')',line:{color:col(i),width:2,dash:'dot'},hoverinfo:'skip'})}});
+  else if(d.kind==='scatter'||d.kind==='line'){
+    const mode=d.kind==='line'?(d.series[0].x.length>80?'lines':'lines+markers'):'markers';
+    if(d.color_mode==='gradient'){
+      const s=d.series[0];
+      tr.push({type:'scatter',mode:d.kind==='line'?'lines':'markers',x:s.x,y:s.y,name:s.name,line:{color:PAL[0],width:2},marker:{color:s.c,colorscale:gradScale(),showscale:true,colorbar:cbar(d.colorname),size:6,opacity:.75}});
+      if(d.kind==='scatter'&&$('#g-trend').checked&&s.x.length>1){const o=ols(s.x,s.y);tr.push({type:'scatter',mode:'lines',x:o.x,y:o.x.map(v2=>o.m*v2+o.b),name:'OLS trend',line:{color:'#fb7185',width:2,dash:'dot'},hoverinfo:'skip'})}
+    }else{
+      d.series.forEach((s,i)=>{tr.push({type:'scatter',mode:mode,x:s.x,y:s.y,name:s.name,marker:{color:col(i),size:5,opacity:.6}});
+        if($('#g-trend').checked&&s.x.length>1){const o=ols(s.x,s.y);tr.push({type:'scatter',mode:'lines',x:o.x,y:o.x.map(v2=>o.m*v2+o.b),name:'OLS ('+s.name+')',line:{color:col(i),width:2,dash:'dot'},hoverinfo:'skip'})}});
+    }
   }
-  else if(d.kind==='bar'||d.kind==='grouped'||d.kind==='stacked')d.series.forEach((s,i)=>tr.push({type:'bar',x:s.x,y:s.y,name:s.name,marker:{color:col(i)}}));
+  else if(d.kind==='bar'||d.kind==='grouped'||d.kind==='stacked'){
+    if(d.color_mode==='gradient'){
+      const s=d.series[0];
+      tr.push({type:'bar',x:s.x,y:s.y,name:s.name,marker:{color:s.c,colorscale:gradScale(),showscale:true,colorbar:cbar(d.colorname)}});
+    }else d.series.forEach((s,i)=>tr.push({type:'bar',x:s.x,y:s.y,name:s.name,marker:{color:col(i)}}));
+  }
   else if(d.kind==='pie'){tr.push({type:'pie',labels:d.series[0].x,values:d.series[0].y,marker:{colors:d.series[0].x.map((_,i)=>PAL[i%PAL.length])},hole:.42,textinfo:'label+percent'})}
   else if(d.kind==='heatcat')tr.push({type:'heatmap',z:d.z,x:d.xlab,y:d.ylab,colorscale:'Greys',reversescale:true,showscale:false,hovertemplate:'%{y} \u00d7 %{x}: %{z}<extra></extra>'});
-  const ly={xaxis:{title:{text:d.xname}},yaxis:{},showlegend:d.series.length>1};
-  if(d.kind==='scatter')ly.yaxis.title={text:d.yname};
+  const ly={xaxis:{title:{text:d.xname}},yaxis:{},showlegend:d.series.length>1&&d.color_mode!=='gradient'};
+  if(d.kind==='scatter'||d.kind==='line')ly.yaxis.title={text:d.yname};
   if(d.kind==='bar')ly.yaxis.title={text:d.stat+' of '+(d.yname||'')};
   if(d.kind==='grouped')ly.barmode='group';
   if(d.kind==='stacked')ly.barmode='stack';
@@ -1727,12 +1829,14 @@ $('#btn-corr').onclick=()=>withBtn('#btn-corr',async()=>{
   $('#corr-pairs').innerHTML=r.pairs.length?r.pairs.map(p=>'<div class="flex justify-between gap-2 border-b" style="border-color:var(--bd);padding:.25rem 0"><span>'+esc(p[0])+' \u00b7 '+esc(p[1])+'</span><b style="color:'+(p[2]>=0?'var(--good)':'var(--bad)')+'">'+p[2]+'</b></div>').join(''):'<span class="text-xs">No finite pairs.</span>';
 });
 function warnBlock(ws){return ws&&ws.length?'<div class="badge b-bad mb-2" style="white-space:normal;max-width:100%">'+esc(ws.join(' | ').slice(0,300))+'</div>':''}
+function fmtBig(v){return v==null?'\u2014':Math.abs(v)>=1000?v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,','):(+v).toFixed(3)}
 function regBlock(r){
   const pct=r.r2==null?'n/a':Math.round(r.r2*100);
-  let impT='';
+  let impT='';let coefT='';
   if(r.importances&&r.importances.length)impT='<div class="mb-2">'+tableHTML(['Feature importance','Score'],r.importances.slice(0,10).map(x=>[esc(x[0]),fmt(x[1],4)]))+'</div>';
+  if(r.coefs&&r.coefs.length)coefT='<div class="mb-2">'+tableHTML(['Feature','Coefficient (raw)','Std. beta (per SD)'],r.coefs.slice(0,15).map(c=>['<b>'+esc(c[0])+'</b>',fmtBig(c[1]),fmtBig(c[2])]))+'<p class="text-xs mt-1" style="color:var(--fg2)">Std. beta = effect of a 1-SD change in the feature, in SDs of the target \u2014 comparable across features regardless of units.</p></div>';
   return '<h2 class="mb-1">'+esc(r.target)+' \u00b7 '+esc(r.model)+' <span class="badge b-no">'+r.kind+'</span></h2>'+warnBlock(r.warnings)+
-  statsHTML([['R\u00b2 (test)',fmt(r.r2)],['Adj R\u00b2',fmt(r.adj_r2)],['R\u00b2 (train)',fmt(r.r2_train)],['RMSE',fmt(r.rmse)],['MAE',fmt(r.mae)],['Rows',r.n]])+impT+
+  statsHTML([['R\u00b2 (test)',fmt(r.r2)],['Adj R\u00b2',fmt(r.adj_r2)],['R\u00b2 (train)',fmt(r.r2_train)],['RMSE',fmt(r.rmse)],['MAE',fmt(r.mae)],['Rows',r.n]])+impT+coefT+
   '<p class="text-xs mt-1 mb-2" style="color:var(--fg2)">'+(r.r2!=null&&r.r2>=0?('Explains \u2248'+pct+'% of held-out variance. '):(r.r2!=null?'Negative R\u00b2 \u2014 worse than predicting the mean on held-out data. ':''))+(r.scaled?'Coefficients are on standardized features. ':'')+r.k+' features \u00b7 seed '+r.seed+'.</p>';
 }
 function repTable(rep){
@@ -1751,18 +1855,26 @@ function clfBlock(r){
 function coefTraces(r){
   const cs=r.coefs;if(!cs||!cs.length)return[];
   const top=cs.slice(0,25);
-  return [{type:'bar',x:top.map(c=>c[1]),y:top.map(c=>c[0]),orientation:'h',marker:{color:top.map(c=>c[1]>=0?'#818cf8':'#fb7185')}}];
+  const val=c=>c[2]!=null?c[2]:c[1];
+  return [{type:'bar',x:top.map(val),y:top.map(c=>c[0]),orientation:'h',marker:{color:top.map(c=>val(c)>=0?PAL[0]:'#fb7185')}}];
 }
 function impTraces(r){
   const imp=r.importances;
   if(imp&&imp.length){const t=imp.slice(0,25);return[{type:'bar',x:t.map(c=>c[1]),y:t.map(c=>c[0]),orientation:'h',marker:{color:PAL[0]}}]}
   return coefTraces(r);
 }
+function permTraces(r){
+  const p=r.perm;
+  if(!p||!p.length)return[];
+  const t=p.slice(0,20);
+  return [{type:'bar',x:t.map(x2=>x2[1]),y:t.map(x2=>x2[0]),orientation:'h',marker:{color:PAL[2]},error_x:{type:'data',array:t.map(x2=>x2[2]==null?0:x2[2]),visible:true,color:'#fb7185',thickness:1}}];
+}
 $('#btn-lin').onclick=()=>withBtn('#btn-lin',async()=>{
   const r=await run({task:'model',model:document.querySelector('input[name=lin-model]:checked').value,target:$('#lin-target').value,features:checkedVals('lin-feats'),alpha:+$('#lin-alpha').value,l1_ratio:+$('#lin-l1').value,test_size:+$('#lin-ts').value,seed:+$('#lin-seed').value||42,scale:$('#lin-scale').checked});
-  S.sheets['Linear Model']=[{metric:'R2 (test)',value:r.r2},{metric:'Adj R2',value:r.adj_r2},{metric:'R2 (train)',value:r.r2_train},{metric:'RMSE',value:r.rmse},{metric:'MAE',value:r.mae},{metric:'Rows',value:r.n},{metric:'Features',value:r.k},{metric:'Target',value:r.target},{metric:'Model',value:r.model},{metric:'Seed',value:r.seed}].concat((r.coefs||[]).map(c=>({feature:c[0],coefficient:c[1]})));
+  S.sheets['Linear Model']=[{metric:'R2 (test)',value:r.r2},{metric:'Adj R2',value:r.adj_r2},{metric:'R2 (train)',value:r.r2_train},{metric:'RMSE',value:r.rmse},{metric:'MAE',value:r.mae},{metric:'Rows',value:r.n},{metric:'Features',value:r.k},{metric:'Target',value:r.target},{metric:'Model',value:r.model},{metric:'Seed',value:r.seed}].concat((r.coefs||[]).map(c=>({feature:c[0],coefficient:c[1],std_beta:c[2]})),(r.perm||[]).map(p=>({feature:p[0]+' (perm)',importance:p[1],sd:p[2]})));
   $('#lin-out').innerHTML=regBlock(r);
-  plot('lin-coef',coefTraces(r),{xaxis:{title:'coefficient'},margin:{l:110}});
+  plot('lin-coef',coefTraces(r),{xaxis:{title:'std. beta (per SD)'},margin:{l:110}});
+  plot('lin-perm',permTraces(r),{xaxis:{title:'R\u00b2 drop when shuffled (held-out)'},margin:{l:110}});
   const lo=Math.min(...r.avp.x,...r.avp.y),hi=Math.max(...r.avp.x,...r.avp.y);
   plot('lin-avp',[{type:'scatter',mode:'markers',x:r.avp.x,y:r.avp.y,name:'predictions',marker:{color:PAL[0],size:5,opacity:.65}},{type:'scatter',mode:'lines',x:[lo,hi],y:[lo,hi],name:'ideal',line:{color:'#fb7185',dash:'dot'},hoverinfo:'skip'}],{xaxis:{title:'actual'},yaxis:{title:'predicted'},showlegend:true});
   const rl=Math.min(...r.resid.x),rh=Math.max(...r.resid.x);
@@ -1772,22 +1884,24 @@ $('#btn-cl').onclick=()=>withBtn('#btn-cl',async()=>{
   const md=$('#cl-unlim').checked?null:+$('#cl-depth').value;
   const r=await run({task:'model',model:document.querySelector('input[name=cl-model]:checked').value,target:$('#cl-target').value,features:checkedVals('cl-feats'),C:+$('#cl-C').value||1,max_depth:md,n_estimators:+$('#cl-nest').value,learning_rate:+$('#cl-lr').value,test_size:+$('#cl-ts').value,seed:+$('#cl-seed').value||42,scale:$('#cl-scale').checked});
   const repRows=Object.entries(r.report||{}).filter(([k,v])=>v&&typeof v==='object').map(([k,v])=>({class:k,precision:v.precision,recall:v.recall,f1:v['f1-score'],support:v.support}));
-  S.sheets['Classification']=[{metric:'Accuracy (test)',value:r.accuracy},{metric:'Accuracy (train)',value:r.train_accuracy},{metric:'ROC-AUC',value:r.auc},{metric:'Classes',value:r.classes},{metric:'Rows',value:r.n},{metric:'Target',value:r.target},{metric:'Model',value:r.model}].concat(repRows,(r.importances||r.coefs||[]).map(x=>({feature:x[0],score:x[1]})));
+  S.sheets['Classification']=[{metric:'Accuracy (test)',value:r.accuracy},{metric:'Accuracy (train)',value:r.train_accuracy},{metric:'ROC-AUC',value:r.auc},{metric:'Classes',value:r.classes},{metric:'Rows',value:r.n},{metric:'Target',value:r.target},{metric:'Model',value:r.model}].concat(repRows,(r.importances||r.coefs||[]).map(x=>({feature:x[0],score:x[1]})),(r.perm||[]).map(p=>({feature:p[0]+' (perm)',importance:p[1],sd:p[2]})));
   $('#cl-out').innerHTML=clfBlock(r);
   plot('cl-cm',[{type:'heatmap',z:r.cm,x:r.labels,y:r.labels,colorscale:[[0,'rgba(129,140,248,.05)'],[1,'#6366f1']],showscale:false,hovertemplate:'actual %{y} \u00b7 predicted %{x}: %{z}<extra></extra>'}],{xaxis:{title:'predicted',gridcolor:'rgba(0,0,0,0)'},yaxis:{title:'actual',gridcolor:'rgba(0,0,0,0)'},margin:{l:84},plot_bgcolor:'rgba(161,161,170,.06)'});
   plot('cl-imp',impTraces(r),{margin:{l:110}});
+  plot('cl-perm',permTraces(r),{xaxis:{title:'accuracy drop when shuffled (held-out)'},margin:{l:110}});
   const rw=$('#cl-rules-wrap');const rtxt=r.rules||(r.gbt_tree?'How boosting works \u2014 first weak learner:\n\n'+r.gbt_tree:null);if(rtxt){rw.classList.remove('hidden');$('#cl-rules').textContent=rtxt}else rw.classList.add('hidden');
 });
 $('#btn-nl').onclick=()=>withBtn('#btn-nl',async()=>{
   const md=$('#nl-unlim').checked?null:+$('#nl-depth').value;
   const r=await run({task:'model',model:document.querySelector('input[name=nl-model]:checked').value,target:$('#nl-target').value,features:checkedVals('nl-feats'),degree:+$('#nl-degree').value,max_depth:md,n_estimators:+$('#nl-nest').value,learning_rate:+$('#nl-lr').value,test_size:+$('#nl-ts').value,seed:+$('#nl-seed').value||42,scale:false});
-  S.sheets['Non-linear Model']=[{metric:'R2 (test)',value:r.r2},{metric:'Adj R2',value:r.adj_r2},{metric:'R2 (train)',value:r.r2_train},{metric:'RMSE',value:r.rmse},{metric:'MAE',value:r.mae},{metric:'Rows',value:r.n},{metric:'Features',value:r.k},{metric:'Target',value:r.target},{metric:'Model',value:r.model},{metric:'Degree',value:r.degree||''}].concat((r.coefs||r.importances||[]).map(c=>({feature:c[0],value:c[1]})));
+  S.sheets['Non-linear Model']=[{metric:'R2 (test)',value:r.r2},{metric:'Adj R2',value:r.adj_r2},{metric:'R2 (train)',value:r.r2_train},{metric:'RMSE',value:r.rmse},{metric:'MAE',value:r.mae},{metric:'Rows',value:r.n},{metric:'Features',value:r.k},{metric:'Target',value:r.target},{metric:'Model',value:r.model},{metric:'Degree',value:r.degree||''}].concat((r.coefs||r.importances||[]).map(c=>({feature:c[0],value:c[1]})),(r.perm||[]).map(p=>({feature:p[0]+' (perm)',importance:p[1],sd:p[2]})));
   $('#nl-out').innerHTML=regBlock(r)+((r.rules||r.gbt_tree)?'<div class="mt-2"><h2>'+(r.rules?'Decision tree rules':'How boosting works \u2014 first weak learner')+'</h2><pre class="rules">'+esc(r.rules||r.gbt_tree)+'</pre></div>':'');
   if(r.curve&&r.feat_name){$('#nl-curve-wrap').classList.remove('hidden');
     plot('nl-curve',[{type:'scatter',mode:'markers',x:r.avp.x,y:r.avp.y,name:'data (test)',marker:{color:'#a1a1aa',size:5,opacity:.55}},{type:'scatter',mode:'lines',x:r.curve.x,y:r.curve.y,name:'fitted model',line:{color:PAL[0],width:2.5}}],{xaxis:{title:r.feat_name},yaxis:{title:r.target},showlegend:true});
   }else $('#nl-curve-wrap').classList.add('hidden');
   const rl=Math.min(...r.resid.x),rh=Math.max(...r.resid.x);
   plot('nl-res',[{type:'scatter',mode:'markers',x:r.resid.x,y:r.resid.y,marker:{color:'#a1a1aa',size:5,opacity:.65}},{type:'scatter',mode:'lines',x:[rl,rh],y:[0,0],line:{color:'#fb7185',dash:'dot'},hoverinfo:'skip'}],{xaxis:{title:'predicted'},yaxis:{title:'residual'}});
+  plot('nl-perm',permTraces(r),{xaxis:{title:'R\u00b2 drop when shuffled (held-out)'},margin:{l:110}});
 });
 function verdictHTML(p){
   return p==null?'<span class="badge b-no">p unavailable</span>':(p<0.05?'<span class="badge b-ok">Statistically significant at \u03b1 = 0.05 \u2014 reject H\u2080</span>':'<span class="badge b-no">Not significant at \u03b1 = 0.05 \u2014 fail to reject H\u2080</span>');
@@ -2011,7 +2125,7 @@ function wfReportHTML(n){
   const rep=n.report||{};const ex=rep.extra||{};let h='';
   if(ex.metric)h+=statsHTML([[ex.metric.name,fmt(ex.metric.value)]].concat(ex.test_metric?[[ex.test_metric.name,fmt(ex.test_metric.value)]]:[]));
   if(ex.eval){const ev=ex.eval;if(ev.note)h+='<p class="text-xs mb-2" style="color:var(--fg2)">'+ev.note+'</p>';else h+=statsHTML([[ev.name,fmt(ev.value)],['rows',ev.rows]])}
-  if(ex.model_summary){const ms=ex.model_summary;h+='<p class="text-xs mb-1" style="color:var(--fg2)">'+esc(ms.algo+' \u2192 '+ms.target+' \u00b7 '+ms.k+' features \u00b7 '+ms.n+' rows')+(ms.metric?' \u00b7 '+esc(ms.metric.name)+' '+fmt(ms.metric.value):'')+'</p>'+(ms.importances?wfKVHTML(ms.importances):ms.coefs?wfKVHTML(ms.coefs):'');if(ms.rules)h+='<pre class="rules" style="max-height:180px">'+esc(ms.rules)+'</pre>'}
+  if(ex.model_summary){const ms=ex.model_summary;h+='<p class="text-xs mb-1" style="color:var(--fg2)">'+esc(ms.algo+' \u2192 '+ms.target+' \u00b7 '+ms.k+' features \u00b7 '+ms.n+' rows')+(ms.metric?' \u00b7 '+esc(ms.metric.name)+' '+fmt(ms.metric.value):'')+'</p>'+(ms.importances?wfKVHTML(ms.importances):ms.coefs?wfKVHTML(ms.coefs):'');if(ms.perm)h+='<div class="mt-2"><b class="text-xs">Permutation importance</b>'+tableHTML(['Feature','Mean importance','\u00b1 SD'],ms.perm.slice(0,10).map(p=>[esc(p[0]),fmt(p[1],4),fmt(p[2],4)]))+'</div>';if(ms.rules)h+='<pre class="rules" style="max-height:180px">'+esc(ms.rules)+'</pre>'}
   if(ex.cm&&ex.labels)h+=cmTableHTML(ex.labels,ex.cm);
   for(const[pn,pv]of Object.entries(rep.ports||{})){
     if(pv.type==='model')continue;
@@ -2024,7 +2138,7 @@ function wfReportHTML(n){
 function wfKVHTML(list){
   const t=(list||[]).slice(0,15);
   if(!t.length)return '';
-  return tableHTML(['Feature','Value'],t.map(x=>[esc(x[0]),fmt(x[1],4)]));
+  return tableHTML(['Feature','Value'],t.map(x=>[esc(x[0]),fmt(x[2]!=null?x[2]:x[1],4)]));
 }
 function wfDrawer(){
   const n=WF.sel?wfNode(WF.sel):null;const box=$('#wf-drawer-body');

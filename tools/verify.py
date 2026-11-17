@@ -55,6 +55,14 @@ ok(json.loads(sample('housing')), 'sample housing')
 
 r = ok(J({'task': 'model', 'model': 'ols', 'target': 'price', 'features': ['sqft', 'bedrooms', 'bathrooms', 'house_age', 'garage', 'lot_size', 'neighborhood'], 'test_size': 0.2, 'seed': 42, 'scale': False}), 'ols')
 assert r['r2'] > 0.5
+assert len(r['coefs'][0]) == 3 and r['coefs'][0][2] is not None, 'std betas missing'
+top0 = r['coefs'][0]
+assert abs(top0[2]) <= 3, 'std beta out of sensible range: %s' % top0
+perm = r.get('perm')
+assert perm and len(perm[0]) == 3, 'permutation importance missing'
+assert perm[0][1] >= perm[-1][1], 'perm importance not sorted'
+assert perm[0][0] == 'sqft', 'perm top feature unexpected: %s' % perm[0][0]
+print('ols std-beta + perm OK: top = %s raw=%s beta=%s perm=%.3f' % (top0[0], round(top0[1], 2), round(top0[2], 3), perm[0][1]))
 r = ok(J({'task': 'model', 'model': 'ridge', 'target': 'price', 'features': None, 'alpha': 1.0, 'scale': True}), 'ridge')
 assert r['scaled'] is True
 r = ok(J({'task': 'model', 'model': 'enet', 'target': 'price', 'features': ['sqft', 'neighborhood'], 'alpha': 0.5, 'l1_ratio': 0.5, 'scale': True}), 'enet')
@@ -67,13 +75,15 @@ print('regression models OK')
 json.loads(sample('churn'))
 r = ok(J({'task': 'model', 'model': 'logreg', 'target': 'churn', 'features': None, 'C': 1.0, 'scale': True}), 'logreg')
 assert 0.5 < r['accuracy'] <= 1 and r['auc'] is not None and r['coefs']
+assert len(r['coefs'][0]) == 3 and r['coefs'][0][2] is not None, 'logreg std betas missing'
 r = ok(J({'task': 'model', 'model': 'dt', 'target': 'churn', 'features': None, 'max_depth': 4}), 'dt')
 assert r['rules'] and r['importances']
 r = ok(J({'task': 'model', 'model': 'gbt', 'target': 'churn', 'features': None, 'n_estimators': 30, 'learning_rate': 0.2}), 'gbt clf')
 assert r['cm'] and len(r['labels']) == 2
+assert r.get('perm') and r['perm'][0][2] is not None, 'gbt perm importance missing'
 r = ok(J({'task': 'model', 'model': 'gbt', 'target': 'churn', 'features': None, 'n_estimators': 20, 'learning_rate': 0.2}), 'gbt clf tree')
 assert r['gbt_tree'] and 'Tree 1 of 20' in r['gbt_tree']
-print('classification models OK')
+print('classification models OK (incl. permutation importance)')
 
 json.loads(sample('housing'))
 r = ok(J({'task': 'corr', 'cols': None, 'method': 'pearson'}), 'corr')
@@ -88,6 +98,12 @@ for kind, spec in [
 ]:
     r = ok(J(dict({'task': 'graph', 'kind': kind}, **spec)), kind)
 assert len(json.loads(run(json.dumps({'task': 'graph', 'kind': 'scatter', 'x': 'sqft', 'y': 'price', 'group': 'neighborhood'})))['series']) == 3
+r = ok(J({'task': 'graph', 'kind': 'scatter', 'x': 'sqft', 'y': 'price', 'group': 'lot_size'}), 'scatter gradient')
+assert r['color_mode'] == 'gradient' and r['colorname'] == 'lot_size' and 'c' in r['series'][0]
+r = ok(J({'task': 'graph', 'kind': 'line', 'x': 'house_age', 'y': 'price'}), 'line')
+assert r['kind'] == 'line' and len(r['series'][0]['x']) == len(r['series'][0]['y'])
+r = ok(J({'task': 'graph', 'kind': 'bar', 'x': 'neighborhood', 'y': 'price', 'agg': 'mean', 'group': 'lot_size'}), 'bar gradient')
+assert r['color_mode'] == 'gradient' and 'c' in r['series'][0]
 print('graphs OK')
 
 json.loads(sample('abtest'))
@@ -139,6 +155,7 @@ assert st['n1']['status'] == 'ok' and st['n1']['report']['ports']['out']['rows']
 assert st['n3']['status'] == 'ok' and 'spend_x2' in st['n3']['report']['ports']['out']['cols']
 assert st['n4']['status'] == 'ok'
 assert st['n5']['status'] == 'ok' and st['n5']['report']['extra']['cm']
+assert st['n5']['report']['extra']['perm'], 'flow model node missing perm importance'
 assert st['n6']['status'] == 'ok'
 cyc = json.loads(run_flow(json.dumps({'nodes': [{'id': 'a', 'type': 'filter', 'params': {}}, {'id': 'b', 'type': 'filter', 'params': {}}], 'edges': [{'from': 'a', 'fromPort': 'out', 'to': 'b', 'port': 'in'}, {'from': 'b', 'fromPort': 'out', 'to': 'a', 'port': 'in'}]})))
 assert not cyc['ok'] and 'Cycle' in cyc['error']
