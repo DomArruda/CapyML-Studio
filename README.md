@@ -45,6 +45,7 @@ The harness compiles the embedded Python, runs real sklearn/scipy workloads agai
 
 ## Notes
 
+- All dynamically rendered HTML passes through [DOMPurify](https://github.com/cure53/DOMPurify) (XSS-safe rendering; Plotly's own internals are left untouched).
 - Chart palettes: color-blind-safe **Okabe–Ito** by default (Tableau 10 / Classic / Grayscale available; persisted in localStorage).
 - Sentiment models (~27–50 MB) download once from the ONNX CDN and are cached like everything else; scoring is capped at 100 rows in small batches.
 - Light/dark theme toggle in the header.

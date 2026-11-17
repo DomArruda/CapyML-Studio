@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CapyML Studio</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect x=%274%27 y=%2712%27 width=%2740%27 height=%2744%27 rx=%2715%27 fill=%27%23a97142%27/%3E%3Ccircle cx=%2712%27 cy=%2716%27 r=%275%27 fill=%27%238a5533%27/%3E%3Ccircle cx=%2736%27 cy=%2716%27 r=%275%27 fill=%27%238a5533%27/%3E%3Crect x=%2713%27 y=%2733%27 width=%2722%27 height=%2715%27 rx=%277.5%27 fill=%27%23c9a27c%27/%3E%3Ccircle cx=%2720%27 cy=%2740%27 r=%271.6%27 fill=%27%234a2f1a%27/%3E%3Ccircle cx=%2728%27 cy=%2740%27 r=%271.6%27 fill=%27%234a2f1a%27/%3E%3Ccircle cx=%2717%27 cy=%2725%27 r=%275.5%27 fill=%27%23fde68a%27 stroke=%27%2318181b%27 stroke-width=%272.4%27/%3E%3Ccircle cx=%2733%27 cy=%2725%27 r=%275.5%27 fill=%27%23fde68a%27 stroke=%27%2318181b%27 stroke-width=%272.4%27/%3E%3Cpath d=%27M22.5 25h5%27 stroke=%27%2318181b%27 stroke-width=%272.4%27/%3E%3Ccircle cx=%2717%27 cy=%2725%27 r=%271.7%27 fill=%27%2318181b%27/%3E%3Ccircle cx=%2733%27 cy=%2725%27 r=%271.7%27 fill=%27%2318181b%27/%3E%3Cpath d=%27M45 56V38h14%27 fill=%27none%27 stroke=%27%2334d399%27 stroke-width=%273%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M48 51l4-5 3 3 3-5%27 fill=%27none%27 stroke=%27%23818cf8%27 stroke-width=%272.6%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3Ccircle cx=%2748%27 cy=%2751%27 r=%272%27 fill=%27%23818cf8%27/%3E%3Ccircle cx=%2752%27 cy=%2746%27 r=%272%27 fill=%27%23818cf8%27/%3E%3Ccircle cx=%2755%27 cy=%2749%27 r=%272%27 fill=%27%23818cf8%27/%3E%3Ccircle cx=%2758%27 cy=%2744%27 r=%272%27 fill=%27%23818cf8%27/%3E%3C/svg%3E">
 <style>
 :root{--bg:#09090b;--card:#09090b;--card2:#18181b;--card3:#27272a;--bd:#27272a;--bdh:#3f3f46;--fg:#fafafa;--fg2:#a1a1aa;--acc:#fafafa;--acc2:#d4d4d8;--good:#10b981;--bad:#f43f5e;--warn:#f59e0b;--ring:rgba(212,212,216,.35)}
 body.light{--bg:#ffffff;--card:#ffffff;--card2:#f4f4f5;--card3:#e4e4e7;--bd:#e4e4e7;--bdh:#d4d4d7;--fg:#18181b;--fg2:#71717a;--acc:#18181b;--acc2:#3f3f46;--good:#059669;--bad:#dc2626;--warn:#b45309;--ring:rgba(24,24,27,.25)}
@@ -120,7 +121,8 @@ const TRANSFORMERS_URL='https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2
 const TRANSFORMERS_ENTRY='https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 const XLSX_URL='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
 const EXCELJS_URL='https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
-const CACHE_PREFIXES=[PYODIDE_URL,PLOTLY_URL,TRANSFORMERS_URL,XLSX_URL,EXCELJS_URL,'https://huggingface.co/','https://cdn-lfs.huggingface.co/'];
+const DOMPURIFY_URL='https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js';
+const CACHE_PREFIXES=[PYODIDE_URL,PLOTLY_URL,TRANSFORMERS_URL,XLSX_URL,EXCELJS_URL,DOMPURIFY_URL,'https://huggingface.co/','https://cdn-lfs.huggingface.co/'];
 const DB='CapyML_WasmCache',STORE='assets';
 const S={cols:[],byName:{},ready:false,dlMB:0,hits:0,sheets:{}};
 const PALETTES={
@@ -175,12 +177,20 @@ async function cachedScript(url,check){
     let buf=hit?hit.body:null;
     if(!buf){const r=await realFetch(url);if(!r.ok)throw 0;buf=await r.arrayBuffer();S.dlMB+=buf.byteLength/1048576;ovMB();
       idbPut(url,{h:{'content-type':'text/javascript'},body:buf});}
-    (0,eval)(new TextDecoder().decode(new Uint8Array(buf)));
+    await blobScript(buf);
     if(!check())throw 0;
     return true;
   }catch(e){return false}
 }
 function fallbackScript(url){return new Promise(res=>{const s=document.createElement('script');s.src=url;s.onload=res;s.onerror=res;document.head.appendChild(s)})}
+function blobScript(buf){
+  return new Promise((res,rej)=>{
+    const u=URL.createObjectURL(new Blob([buf],{type:'text/javascript'}));
+    const s=document.createElement('script');
+    s.src=u;s.onload=()=>{URL.revokeObjectURL(u);res()};s.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('script failed'))};
+    document.head.appendChild(s);
+  });
+}
 async function importCached(url,entry){
   try{
     const hit=await idbGet(url);let buf=hit?hit.body:null;
@@ -192,6 +202,14 @@ async function importCached(url,entry){
   }catch(e){return (await import(entry||url)).loadPyodide}
 }
 function ovMB(){const e=document.getElementById('ov-mb');if(e)e.textContent=S.dlMB>0?('Downloading... '+S.dlMB.toFixed(1)+' MB (first time only - cached afterwards)'):''}
+function safe(html){
+  if(typeof DOMPurify!=='undefined')return DOMPurify.sanitize(String(html));
+  return new DOMParser().parseFromString(String(html),'text/html').body.innerHTML;
+}
+(function(){
+  const d=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML');
+  Object.defineProperty(Element.prototype,'innerHTML',{get:d.get,set(h){d.set.call(this,(this.closest&&this.closest('.js-plotly-plot'))?h:safe(h))}});
+})();
 </script>
 </head>
 <body>
@@ -1436,8 +1454,9 @@ function lo(extra){return Object.assign({margin:{t:24,r:20,b:44,l:58},paper_bgco
 function plot(id,traces,layout,config){if(typeof Plotly==='undefined')return;Plotly.newPlot(id,traces,lo(layout),Object.assign({responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']},config||{}))}
 async function boot(){
   try{
-    ovMB();$('#ov-status').textContent='Loading UI toolkit (Tailwind + Plotly)...';
+    ovMB();$('#ov-status').textContent='Loading UI toolkit (Tailwind + DOMPurify + Plotly)...';
     if(typeof tailwind==='undefined')await fallbackScript(TW_URL);
+    if(!await cachedScript(DOMPURIFY_URL,()=>typeof DOMPurify!=='undefined'))await fallbackScript(DOMPURIFY_URL);
     if(!await cachedScript(PLOTLY_URL,()=>typeof Plotly!=='undefined'))await fallbackScript(PLOTLY_URL);
     if(typeof Plotly==='undefined')throw new Error('Plotly failed to load (network?)');
     $('#ov-status').textContent='Downloading Python runtime (Pyodide, ~10 MB)...';
